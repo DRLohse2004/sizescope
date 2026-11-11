@@ -5,6 +5,7 @@ package scanner
 import (
 	"errors"
 	"strings"
+	"sync/atomic"
 	"syscall"
 	"unsafe"
 
@@ -89,6 +90,11 @@ func listDir(path string, cluster int64, cloudFetch bool) ([]Entry, error) {
 	if windows.Handle(h) == windows.InvalidHandle {
 		if e1 == windows.ERROR_FILE_NOT_FOUND {
 			return nil, nil
+		}
+		if e1 == windows.ERROR_ACCESS_DENIED && backupRead.Load() {
+			// protected folder (e.g. System Volume Information): list it with
+			// backup semantics, which administrators may use regardless of ACLs
+			return listDirBackup(path, cluster)
 		}
 		return nil, e1
 	}
@@ -187,4 +193,111 @@ func classifyErr(err error) string {
 		return "denied"
 	}
 	return "error"
+}
+
+// ---------------------------------------------------------------- backup semantics
+
+var backupRead atomic.Bool
+
+// SetBackupRead enables reading protected folders through SeBackupPrivilege.
+// It only has an effect for elevated administrators; returns whether it is active.
+func SetBackupRead(on bool) bool {
+	if !on {
+		backupRead.Store(false)
+		return false
+	}
+	ok := enablePrivilege("SeBackupPrivilege")
+	backupRead.Store(ok)
+	return ok
+}
+
+func enablePrivilege(name string) bool {
+	var tok windows.Token
+	if windows.OpenProcessToken(windows.CurrentProcess(), windows.TOKEN_ADJUST_PRIVILEGES|windows.TOKEN_QUERY, &tok) != nil {
+		return false
+	}
+	defer tok.Close()
+	n, _ := windows.UTF16PtrFromString(name)
+	var luid windows.LUID
+	if windows.LookupPrivilegeValue(nil, n, &luid) != nil {
+		return false
+	}
+	tp := windows.Tokenprivileges{PrivilegeCount: 1}
+	tp.Privileges[0] = windows.LUIDAndAttributes{Luid: luid, Attributes: windows.SE_PRIVILEGE_ENABLED}
+	// AdjustTokenPrivileges reports ERROR_NOT_ALL_ASSIGNED when the account lacks the privilege
+	err := windows.AdjustTokenPrivileges(tok, false, &tp, 0, nil, nil)
+	return err == nil
+}
+
+// FILE_FULL_DIR_INFO
+type fullDirInfo struct {
+	NextEntryOffset uint32
+	FileIndex       uint32
+	CreationTime    int64
+	LastAccessTime  int64
+	LastWriteTime   int64
+	ChangeTime      int64
+	EndOfFile       int64
+	AllocationSize  int64
+	FileAttributes  uint32
+	FileNameLength  uint32
+	EaSize          uint32 // reparse tag for reparse points
+	FileName        [1]uint16
+}
+
+const fileFullDirectoryInfo = 14
+
+func filetimeToUnix(ft int64) int64 { return ft/10000000 - 11644473600 }
+
+func listDirBackup(path string, cluster int64) ([]Entry, error) {
+	p16, err := windows.UTF16PtrFromString(extendedPath(path))
+	if err != nil {
+		return nil, err
+	}
+	h, err := windows.CreateFile(p16, windows.FILE_LIST_DIRECTORY,
+		windows.FILE_SHARE_READ|windows.FILE_SHARE_WRITE|windows.FILE_SHARE_DELETE, nil,
+		windows.OPEN_EXISTING, windows.FILE_FLAG_BACKUP_SEMANTICS, 0)
+	if err != nil {
+		return nil, err
+	}
+	defer windows.CloseHandle(h)
+
+	buf := make([]uint64, 8192) // 64 KiB, 8-byte aligned
+	bb := (*byte)(unsafe.Pointer(&buf[0]))
+	var out []Entry
+	for {
+		if err := windows.GetFileInformationByHandleEx(h, fileFullDirectoryInfo, bb, uint32(len(buf)*8)); err != nil {
+			if err == windows.ERROR_NO_MORE_FILES {
+				break
+			}
+			return out, err
+		}
+		off := uintptr(0)
+		for {
+			info := (*fullDirInfo)(unsafe.Add(unsafe.Pointer(bb), off))
+			name := windows.UTF16ToString(unsafe.Slice(&info.FileName[0], info.FileNameLength/2))
+			if name != "." && name != ".." {
+				attr := info.FileAttributes
+				e := Entry{Name: name, IsDir: attr&attrDirectory != 0, MTime: filetimeToUnix(info.LastWriteTime)}
+				if attr&attrReparse != 0 && e.IsDir && !isCloudTag(info.EaSize) {
+					e.Linked = true
+				}
+				if !e.IsDir {
+					e.Online = attr&(attrRecallOnAccess|attrOffline) != 0
+					e.Size = info.EndOfFile
+					e.Alloc = info.AllocationSize
+					if e.Online {
+						e.Alloc = 0
+					}
+				}
+				out = append(out, e)
+			}
+			if info.NextEntryOffset == 0 {
+				break
+			}
+			off += uintptr(info.NextEntryOffset)
+		}
+	}
+	_ = cluster
+	return out, nil
 }

@@ -238,7 +238,12 @@ func (u *UI) mapPanel(gtx layout.Context, _ image.Rectangle, r image.Rectangle) 
 		legendH = d(8)
 	}
 	mr := image.Rect(r.Min.X+d(10), r.Min.Y, r.Max.X-d(10), r.Max.Y-legendH)
-	within(gtx, mr, func(gtx layout.Context) { u.mapView.Layout(gtx, u, mr.Min) })
+	if md := u.mapView.data; md == nil || md.Size <= 0 {
+		fillRR(gtx, mr, d(4), mapFolderColor(&u.pal, 0))
+		u.text(gtx, mr, u.t("emptyFolder"), 13, u.pal.Muted, font.Normal, text.Middle)
+	} else {
+		within(gtx, mr, func(gtx layout.Context) { u.mapView.Layout(gtx, u, mr.Min) })
+	}
 	if u.settings.MapColor != "depth" {
 		x, y := mr.Min.X, mr.Max.Y+d(8)
 		lh := d(18)

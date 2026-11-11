@@ -27,7 +27,7 @@ import (
 )
 
 // appVersion is overridden at build time via -ldflags "-X main.appVersion=...".
-var appVersion = "2.0.2"
+var appVersion = "2.0.3"
 
 func main() {
 	u := newUI()
@@ -104,6 +104,7 @@ type UI struct {
 	btnScan, btnStop, btnPick, btnDrives, btnExport, btnAdmin, btnSet widget.Clickable
 	btnErrors                                                         widget.Clickable
 	btnBannerAdmin, btnBannerClose                                    widget.Clickable
+	backupActive                                                      bool
 	bannerClosed                                                      bool
 	driveBtns                                                         []widget.Clickable
 	recentBtns                                                        []widget.Clickable
@@ -198,6 +199,7 @@ func (u *UI) applySettings() {
 	if u.hwnd != 0 {
 		setTitleBarDark(u.hwnd, u.dark)
 	}
+	u.backupActive = u.admin && scanner.SetBackupRead(u.settings.BackupRead)
 	u.mapView.dirty = true
 	u.flatDirty = true
 }
@@ -672,6 +674,8 @@ func (u *UI) statusbar(gtx layout.Context, r image.Rectangle) {
 					if !u.admin && platformName == "windows" {
 						u.tip = &tipInfo{at: image.Pt(br.Min.X, r.Min.Y-d(60)), title: u.t("adminHint")}
 						pointer.CursorPointer.Add(gtx.Ops)
+					} else {
+						u.tip = &tipInfo{at: image.Pt(br.Min.X, r.Min.Y-d(60)), title: u.t("errorsAdminTip")}
 					}
 				}
 				return layout.Dimensions{Size: sz}

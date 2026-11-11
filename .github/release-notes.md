@@ -1,6 +1,11 @@
 **Download:** `SizeScope.exe` herunterladen und starten – keine Installation, keine Abhängigkeiten.
 
-### Neu in 2.0.2
+### Neu in 2.0.3
+- Als Administrator werden jetzt auch geschützte Ordner wie „System Volume Information“ gelesen (Windows-Sicherungsrecht, nur Auflisten). In den Einstellungen abschaltbar.
+- Statusleiste erklärt bei Admin-Rechten, dass verbleibende Ordner auch für Administratoren gesperrt sind.
+- Leere Ordner zeigen in der Karte einen Hinweis statt einer leeren Fläche.
+
+### 2.0.2
 - Hinweisleiste, wenn SizeScope ohne Administratorrechte läuft – mit „Als Administrator neu starten“. Lässt sich wegklicken oder in den Einstellungen abschalten.
 - Behoben: abgeschnittene Texte in den Einstellungen.
 

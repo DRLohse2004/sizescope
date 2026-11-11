@@ -24,13 +24,14 @@ type Settings struct {
 	CloudFetch    bool     `json:"cloudFetch"`    // let OneDrive & co. download online-only folder listings
 	OnlineFiles   string   `json:"onlineFiles"`   // skip | count: files that are only stored in the cloud
 	AdminHint     bool     `json:"adminHint"`     // warn when running without administrator rights
+	BackupRead    bool     `json:"backupRead"`    // as administrator, read protected folders via backup privilege
 	Recent        []string `json:"recent"`
 }
 
 func defaultSettings() Settings {
 	return Settings{
 		Language: "auto", Theme: "system", Unit: "auto", SizeMode: "size", ShowFiles: true,
-		MapColor: "type", OnlineFiles: "skip", AdminHint: true, TopFiles: 200, CsvSeparator: ";", ExportDepth: 0, ConfirmDelete: true,
+		MapColor: "type", OnlineFiles: "skip", AdminHint: true, BackupRead: true, TopFiles: 200, CsvSeparator: ";", ExportDepth: 0, ConfirmDelete: true,
 	}
 }
 

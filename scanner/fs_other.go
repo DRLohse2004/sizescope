@@ -47,3 +47,6 @@ func classifyErr(err error) string {
 	}
 	return "error"
 }
+
+// SetBackupRead is only supported on Windows.
+func SetBackupRead(bool) bool { return false }

@@ -134,6 +134,7 @@ func (u *UI) layoutSettings(gtx layout.Context) {
 		checkRow(u.t("sExportFiles"), "expfiles", &s.ExportFiles, ""),
 		checkRow(u.t("sConfirmDelete"), "confirm", &s.ConfirmDelete, ""),
 		checkRow(u.t("sAdminHint"), "adminhint", &s.AdminHint, ""),
+		checkRow(u.t("sBackupRead"), "backup", &s.BackupRead, u.t("sBackupReadHint")),
 	}
 
 	content := image.Rect(box.Min.X+pad, box.Min.Y+d(56), box.Max.X-pad, box.Max.Y-d(64))
