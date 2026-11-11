@@ -5,6 +5,9 @@ on:
     tags: ["v*"]
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   windows:
     runs-on: ubuntu-latest
@@ -24,3 +27,4 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           files: build/bin/SizeScope.exe
+          generate_release_notes: true
