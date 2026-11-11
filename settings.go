@@ -23,13 +23,14 @@ type Settings struct {
 	ConfirmDelete bool     `json:"confirmDelete"` // ask before moving to the recycle bin
 	CloudFetch    bool     `json:"cloudFetch"`    // let OneDrive & co. download online-only folder listings
 	OnlineFiles   string   `json:"onlineFiles"`   // skip | count: files that are only stored in the cloud
+	AdminHint     bool     `json:"adminHint"`     // warn when running without administrator rights
 	Recent        []string `json:"recent"`
 }
 
 func defaultSettings() Settings {
 	return Settings{
 		Language: "auto", Theme: "system", Unit: "auto", SizeMode: "size", ShowFiles: true,
-		MapColor: "type", OnlineFiles: "skip", TopFiles: 200, CsvSeparator: ";", ExportDepth: 0, ConfirmDelete: true,
+		MapColor: "type", OnlineFiles: "skip", AdminHint: true, TopFiles: 200, CsvSeparator: ";", ExportDepth: 0, ConfirmDelete: true,
 	}
 }
 

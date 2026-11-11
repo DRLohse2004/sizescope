@@ -10,6 +10,7 @@ import (
 	"gioui.org/layout"
 	"gioui.org/op"
 	"gioui.org/text"
+	"gioui.org/unit"
 	"gioui.org/widget"
 	"gioui.org/widget/material"
 )
@@ -72,35 +73,26 @@ func (u *UI) layoutSettings(gtx layout.Context) {
 	pad := d(22)
 	u.text(gtx, image.Rect(box.Min.X+pad, box.Min.Y+d(16), box.Max.X-pad, box.Min.Y+d(44)), u.t("settings"), 17, u.pal.Ink, font.SemiBold, text.Start)
 
+	// each row: label on the left, control on the right, optional hint below the control
 	type row struct {
 		label string
-		h     float32
+		base  float32 // control height in dp
+		hint  string
 		draw  func(gtx layout.Context, r image.Rectangle)
 	}
-	segRow := func(name string, values, labels []string, sel *string) row {
-		return row{"", 40, func(gtx layout.Context, r image.Rectangle) {
+	segRow := func(label, name string, values, labels []string, sel *string, hint string) row {
+		return row{label, 40, hint, func(gtx layout.Context, r image.Rectangle) {
 			u.segmented(gtx, dl.seg(name, len(values)), image.Rect(r.Min.X, r.Min.Y+d(4), r.Max.X, r.Max.Y-d(4)), values, labels, sel)
 		}}
 	}
-	checkRow := func(name string, v *bool, hint string) row {
-		hh := float32(36)
-		if hint != "" {
-			hh = 56
-		}
-		return row{"", hh, func(gtx layout.Context, r image.Rectangle) {
-			u.checkbox(gtx, dl.check(name), image.Rect(r.Min.X, r.Min.Y, r.Min.X+d(30), r.Min.Y+d(36)), v)
-			if hint != "" {
-				u.wrapText(gtx, image.Pt(r.Min.X, r.Min.Y+d(32)), r.Dx(), hint, 11, u.pal.Faint)
-			}
+	checkRow := func(label, name string, v *bool, hint string) row {
+		return row{label, 36, hint, func(gtx layout.Context, r image.Rectangle) {
+			u.checkbox(gtx, dl.check(name), image.Rect(r.Min.X, r.Min.Y, r.Min.X+d(30), r.Max.Y), v)
 		}}
 	}
-	editRow := func(ed *widget.Editor, hint string, height float32, multi bool) row {
-		hh := height
-		if hint != "" {
-			hh += 18
-		}
-		return row{"", hh, func(gtx layout.Context, r image.Rectangle) {
-			er := image.Rect(r.Min.X, r.Min.Y+d(4), r.Max.X, r.Min.Y+d(height)-d(4))
+	editRow := func(label string, ed *widget.Editor, height float32, multi bool, hint string) row {
+		return row{label, height, hint, func(gtx layout.Context, r image.Rectangle) {
+			er := image.Rect(r.Min.X, r.Min.Y+d(4), r.Max.X, r.Max.Y-d(4))
 			fillRR(gtx, er, d(6), u.pal.Surface)
 			bc := u.pal.Line
 			if gtx.Focused(ed) {
@@ -123,79 +115,84 @@ func (u *UI) layoutSettings(gtx layout.Context) {
 				call.Add(gtx.Ops)
 				o.Pop()
 			})
-			if hint != "" {
-				u.text(gtx, image.Rect(r.Min.X, er.Max.Y+d(2), r.Max.X, er.Max.Y+d(18)), hint, 11, u.pal.Faint, font.Normal, text.Start)
-			}
 		}}
 	}
 	s := &dl.s
-	rows := []struct {
-		label string
-		r     row
-	}{
-		{u.t("sLanguage"), segRow("lang", []string{"auto", "de", "en"}, []string{u.t("sAuto"), "Deutsch", "English"}, &s.Language)},
-		{u.t("sTheme"), segRow("theme", []string{"system", "light", "dark"}, []string{u.t("sSystem"), u.t("sLight"), u.t("sDark")}, &s.Theme)},
-		{u.t("sUnit"), segRow("unit", []string{"auto", "KB", "MB", "GB"}, []string{u.t("sAuto"), "KB", "MB", "GB"}, &s.Unit)},
-		{u.t("sSizeMode"), segRow("mode", []string{"size", "alloc"}, []string{u.t("colSize"), u.t("colAlloc")}, &s.SizeMode)},
-		{u.t("sMapColor"), segRow("map", []string{"type", "depth"}, []string{u.t("sByType"), u.t("sByFolder")}, &s.MapColor)},
-		{u.t("sShowFiles"), checkRow("files", &s.ShowFiles, "")},
-		{u.t("sTopFiles"), editRow(&dl.topEd, "", 38, false)},
-		{u.t("sExclude"), editRow(&dl.excludeEd, u.t("sExcludeHint"), 78, true)},
-		{u.t("sOnline"), segRow("online", []string{"skip", "count"}, []string{u.t("sOnlineSkip"), u.t("sOnlineCount")}, &s.OnlineFiles)},
-		{"", row{"", 30, func(gtx layout.Context, r image.Rectangle) {
-			u.wrapText(gtx, image.Pt(r.Min.X, r.Min.Y-d(4)), r.Dx(), u.t("sOnlineHint"), 11, u.pal.Faint)
-		}}},
-		{u.t("sCloudFetch"), checkRow("cloud", &s.CloudFetch, u.t("sCloudFetchHint"))},
-		{u.t("sCsvSep"), segRow("csv", []string{";", ",", "tab"}, []string{";", ",", "Tab"}, &s.CsvSeparator)},
-		{u.t("sExportDepth"), editRow(&dl.depthEd, u.t("sExportDepthHint"), 38, false)},
-		{u.t("sExportFiles"), checkRow("expfiles", &s.ExportFiles, "")},
-		{u.t("sConfirmDelete"), checkRow("confirm", &s.ConfirmDelete, "")},
+	rows := []row{
+		segRow(u.t("sLanguage"), "lang", []string{"auto", "de", "en"}, []string{u.t("sAuto"), "Deutsch", "English"}, &s.Language, ""),
+		segRow(u.t("sTheme"), "theme", []string{"system", "light", "dark"}, []string{u.t("sSystem"), u.t("sLight"), u.t("sDark")}, &s.Theme, ""),
+		segRow(u.t("sUnit"), "unit", []string{"auto", "KB", "MB", "GB"}, []string{u.t("sAuto"), "KB", "MB", "GB"}, &s.Unit, ""),
+		segRow(u.t("sSizeMode"), "mode", []string{"size", "alloc"}, []string{u.t("colSize"), u.t("colAlloc")}, &s.SizeMode, ""),
+		segRow(u.t("sMapColor"), "map", []string{"type", "depth"}, []string{u.t("sByType"), u.t("sByFolder")}, &s.MapColor, ""),
+		checkRow(u.t("sShowFiles"), "files", &s.ShowFiles, ""),
+		editRow(u.t("sTopFiles"), &dl.topEd, 38, false, ""),
+		editRow(u.t("sExclude"), &dl.excludeEd, 78, true, u.t("sExcludeHint")),
+		segRow(u.t("sOnline"), "online", []string{"skip", "count"}, []string{u.t("sOnlineSkip"), u.t("sOnlineCount")}, &s.OnlineFiles, u.t("sOnlineHint")),
+		checkRow(u.t("sCloudFetch"), "cloud", &s.CloudFetch, u.t("sCloudFetchHint")),
+		segRow(u.t("sCsvSep"), "csv", []string{";", ",", "tab"}, []string{";", ",", "Tab"}, &s.CsvSeparator, ""),
+		editRow(u.t("sExportDepth"), &dl.depthEd, 38, false, u.t("sExportDepthHint")),
+		checkRow(u.t("sExportFiles"), "expfiles", &s.ExportFiles, ""),
+		checkRow(u.t("sConfirmDelete"), "confirm", &s.ConfirmDelete, ""),
+		checkRow(u.t("sAdminHint"), "adminhint", &s.AdminHint, ""),
 	}
 
 	content := image.Rect(box.Min.X+pad, box.Min.Y+d(56), box.Max.X-pad, box.Max.Y-d(64))
-	labelW := d(200)
-	total := 0
-	for _, r := range rows {
-		total += d(r.r.h) + d(6)
+	labelW := d(210)
+	ctrlW := content.Dx() - labelW - d(8) // leave room for the scroll indicator
+	gap := d(8)
+	// measure first: labels and hints wrap differently depending on font and DPI
+	measure := func(w int, txt string, size float32) int {
+		if txt == "" {
+			return 0
+		}
+		m := op.Record(gtx.Ops)
+		h := u.wrapText(gtx, image.Point{}, w, txt, unit.Sp(size), u.pal.Muted)
+		m.Stop()
+		return h
 	}
-	total += d(30)
+	heights := make([]int, len(rows))
+	hintH := make([]int, len(rows))
+	total := 0
+	for i, r := range rows {
+		hintH[i] = measure(ctrlW, r.hint, 11)
+		h := d(r.base)
+		if hintH[i] > 0 {
+			h += hintH[i] + d(4)
+		}
+		if lh := measure(labelW-d(16), r.label, 13) + d(18); lh > h {
+			h = lh
+		}
+		heights[i] = h
+		total += h + gap
+	}
+	about := u.t("about", "v", appVersion)
+	total += measure(content.Dx(), about, 12) + d(12)
+
 	// scroll with the mouse wheel if the dialog is too small
 	for _, e := range pointerEvents(gtx, &dl.list.tag, pointer.Scroll) {
 		dl.scroll += int(e.Scroll.Y)
 	}
-	maxScroll := total - content.Dy()
-	if maxScroll < 0 {
-		maxScroll = 0
-	}
-	if dl.scroll > maxScroll {
-		dl.scroll = maxScroll
-	}
-	if dl.scroll < 0 {
-		dl.scroll = 0
-	}
+	maxScroll := max(total-content.Dy(), 0)
+	dl.scroll = min(max(dl.scroll, 0), maxScroll)
 	within(gtx, content, func(gtx layout.Context) {
 		// registered first so it lies below the controls and only catches the wheel
 		hitArea(gtx, image.Rectangle{Max: content.Size()}, &dl.list.tag, pointer.CursorDefault)
 		y := -dl.scroll
-		cw := content.Dx()
-		for _, r := range rows {
-			hh := d(r.r.h)
-			if r.label != "" {
-				lh := u.wrapText(gtx, image.Pt(0, y+d(9)), labelW-d(16), r.label, 13, u.pal.Muted)
-				if lh > d(24) && hh < lh+d(12) {
-					hh = lh + d(12) // label wraps onto two lines
-				}
+		for i, r := range rows {
+			u.wrapText(gtx, image.Pt(0, y+d(9)), labelW-d(16), r.label, 13, u.pal.Muted)
+			r.draw(gtx, image.Rect(labelW, y, labelW+ctrlW, y+d(r.base)))
+			if r.hint != "" {
+				u.wrapText(gtx, image.Pt(labelW, y+d(r.base)+d(2)), ctrlW, r.hint, 11, u.pal.Faint)
 			}
-			r.r.draw(gtx, image.Rect(labelW, y, cw, y+hh))
-			y += hh + d(6)
+			y += heights[i] + gap
 		}
-		u.text(gtx, image.Rect(0, y, cw, y+d(24)), u.t("about", "v", appVersion), 12, u.pal.Faint, font.Normal, text.Start)
+		u.wrapText(gtx, image.Pt(0, y+d(4)), content.Dx(), about, 12, u.pal.Faint)
 		if maxScroll > 0 {
 			// thin scroll indicator so it is clear there is more below
 			ch := content.Dy()
 			th := ch * ch / total
 			ty := (ch - th) * dl.scroll / maxScroll
-			fillRR(gtx, image.Rect(cw-d(4), ty, cw, ty+th), d(2), u.pal.Line)
+			fillRR(gtx, image.Rect(content.Dx()-d(4), ty, content.Dx(), ty+th), d(2), u.pal.Line)
 		}
 	})
 

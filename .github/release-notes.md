@@ -1,6 +1,10 @@
 **Download:** `SizeScope.exe` herunterladen und starten – keine Installation, keine Abhängigkeiten.
 
-### Neu in 2.0.1
+### Neu in 2.0.2
+- Hinweisleiste, wenn SizeScope ohne Administratorrechte läuft – mit „Als Administrator neu starten“. Lässt sich wegklicken oder in den Einstellungen abschalten.
+- Behoben: abgeschnittene Texte in den Einstellungen.
+
+### 2.0.1
 - Behoben: Absturz beim CSV-Export.
 - Behoben: In den Einstellungen ließ sich nichts anklicken.
 - Netzlaufwerke: korrekte Belegung bei Freigaben mit Kontingent (keine negativen Werte mehr), eigenes Symbol, Hinweis „nicht erreichbar“ bei getrennten Laufwerken.

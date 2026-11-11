@@ -27,7 +27,7 @@ import (
 )
 
 // appVersion is overridden at build time via -ldflags "-X main.appVersion=...".
-var appVersion = "2.0.1"
+var appVersion = "2.0.2"
 
 func main() {
 	u := newUI()
@@ -103,6 +103,8 @@ type UI struct {
 	pathEd                                                            widget.Editor
 	btnScan, btnStop, btnPick, btnDrives, btnExport, btnAdmin, btnSet widget.Clickable
 	btnErrors                                                         widget.Clickable
+	btnBannerAdmin, btnBannerClose                                    widget.Clickable
+	bannerClosed                                                      bool
 	driveBtns                                                         []widget.Clickable
 	recentBtns                                                        []widget.Clickable
 	split                                                             float32
@@ -266,7 +268,13 @@ func (u *UI) frame(gtx layout.Context) {
 	tbH, sbH := u.dp(gtx, 50), u.dp(gtx, 28)
 	u.tip = nil
 	u.toolbar(gtx, image.Rect(0, 0, full.X, tbH))
-	body := image.Rect(0, tbH, full.X, full.Y-sbH)
+	top := tbH
+	if u.showAdminBanner() {
+		bh := u.dp(gtx, 40)
+		u.adminBanner(gtx, image.Rect(0, top, full.X, top+bh))
+		top += bh
+	}
+	body := image.Rect(0, top, full.X, full.Y-sbH)
 	if t == nil {
 		u.welcome(gtx, body)
 	} else {
@@ -964,4 +972,38 @@ func driveIcon(kind string) *widget.Icon {
 		return ic.usb
 	}
 	return ic.drive
+}
+
+// showAdminBanner reports whether to warn about missing administrator rights.
+func (u *UI) showAdminBanner() bool {
+	if u.bannerClosed || !u.settings.AdminHint {
+		return false
+	}
+	if os.Getenv("SIZESCOPE_ADMIN_BANNER") == "1" { // for testing on other systems
+		return true
+	}
+	return !u.admin && platformName == "windows"
+}
+
+func (u *UI) adminBanner(gtx layout.Context, r image.Rectangle) {
+	d := func(v float32) int { return u.dp(gtx, v) }
+	fill(gtx, r, u.pal.WarnSoft)
+	fill(gtx, image.Rect(r.Min.X, r.Max.Y-1, r.Max.X, r.Max.Y), u.pal.Line)
+	is := d(18)
+	cy := r.Min.Y + r.Dy()/2
+	x := r.Min.X + d(14)
+	u.icon(gtx, ic.shield, image.Rect(x, cy-is/2, x+is, cy+is/2), u.pal.Warn)
+	x += is + d(10)
+	closeW := d(30)
+	label := u.t("restartAdmin")
+	bw := u.textWidth(gtx, label, 13, font.SemiBold) + d(28)
+	bx := r.Max.X - d(10) - closeW - d(8) - bw
+	u.text(gtx, image.Rect(x, r.Min.Y, bx-d(12), r.Max.Y), u.t("adminBanner"), 13, u.pal.Ink, font.Normal, text.Start)
+	if u.button(gtx, &u.btnBannerAdmin, image.Rect(bx, cy-d(14), bx+bw, cy+d(14)), label, ic.shield, btnPlain) {
+		u.restartAdmin()
+	}
+	cx := r.Max.X - d(10) - closeW
+	if u.iconButton(gtx, &u.btnBannerClose, image.Rect(cx, cy-closeW/2, cx+closeW, cy+closeW/2), ic.close, u.pal.Muted, true) {
+		u.bannerClosed = true
+	}
 }

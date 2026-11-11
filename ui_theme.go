@@ -25,6 +25,7 @@ type Palette struct {
 	Bg, Surface, Raised, Ink, Muted, Faint, Line, LineSoft color.NRGBA
 	Accent, AccentInk, AccentSoft, Sel, Hover, BarTrack    color.NRGBA
 	Danger, Warn, Folder, Shadow, Backdrop, MapFolderInk   color.NRGBA
+	WarnSoft                                               color.NRGBA
 	MapFolderBase                                          [3]uint8 // rgb at depth 0
 	MapFolderStep                                          int      // lightness change per depth
 }
@@ -41,6 +42,7 @@ var lightPal = Palette{
 	Hover: rgb(0xedf2f5), BarTrack: rgb(0xe1e7ec), Danger: rgb(0xb93a2c), Warn: rgb(0xa8670f),
 	Folder: rgb(0xc9a24a), Shadow: rgba(0x15202b, 40), Backdrop: rgba(0x0a1016, 110),
 	MapFolderInk: rgba(0x15202b, 200), MapFolderBase: [3]uint8{0xd9, 0xdf, 0xe5}, MapFolderStep: -10,
+	WarnSoft: rgb(0xfbefd8),
 }
 
 var darkPal = Palette{
@@ -50,6 +52,7 @@ var darkPal = Palette{
 	Hover: rgb(0x1d2730), BarTrack: rgb(0x26313b), Danger: rgb(0xe2715f), Warn: rgb(0xe0a54b),
 	Folder: rgb(0xd8b45d), Shadow: rgba(0x000000, 110), Backdrop: rgba(0x000000, 130),
 	MapFolderInk: rgba(0xe2e8ee, 215), MapFolderBase: [3]uint8{0x1e, 0x27, 0x30}, MapFolderStep: 7,
+	WarnSoft: rgb(0x33291a),
 }
 
 // file type colours, shared by both themes
