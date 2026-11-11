@@ -14,7 +14,7 @@ import (
 )
 
 // appVersion is overridden at build time via -ldflags "-X main.appVersion=..."
-var appVersion = "1.0.0"
+var appVersion = "1.0.1"
 
 // App is bound to the frontend; every exported method is callable from JS.
 type App struct {
@@ -107,7 +107,7 @@ func (a *App) StartScan(path string) error {
 	if a.tree != nil {
 		a.tree.Cancel()
 	}
-	t := scanner.NewTree(path, scanner.Options{Exclude: a.settings.Exclude})
+	t := scanner.NewTree(path, scanner.Options{Exclude: a.settings.Exclude, CloudFetch: a.settings.CloudFetch})
 	a.tree = t
 	// remember recently scanned folders
 	rec := []string{t.RootPath}

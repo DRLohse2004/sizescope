@@ -9,7 +9,7 @@ import (
 	"syscall"
 )
 
-func listDir(path string, cluster int64) ([]Entry, error) {
+func listDir(path string, cluster int64, _ bool) ([]Entry, error) {
 	des, err := os.ReadDir(path)
 	out := make([]Entry, 0, len(des))
 	for _, de := range des {

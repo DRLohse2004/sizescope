@@ -42,9 +42,10 @@ const (
 	attrRecallOnOpen   = 0x40000
 	attrRecallOnAccess = 0x400000
 
-	findExInfoBasic  = 1
-	findExLargeFetch = 2
-	invalidFileSize  = 0xFFFFFFFF
+	findExInfoBasic         = 1
+	findExLargeFetch        = 2
+	findExOnDiskEntriesOnly = 4 // do not ask cloud providers (OneDrive etc.) to fetch missing entries
+	invalidFileSize         = 0xFFFFFFFF
 )
 
 // extendedPath turns C:\x into \\?\C:\x and \\srv\share into \\?\UNC\srv\share
@@ -61,7 +62,7 @@ func extendedPath(p string) string {
 
 func isCloudTag(tag uint32) bool { return tag&0xFFFF0FFF == 0x9000001A }
 
-func listDir(path string, cluster int64) ([]Entry, error) {
+func listDir(path string, cluster int64, cloudFetch bool) ([]Entry, error) {
 	pattern := extendedPath(path)
 	if !strings.HasSuffix(pattern, `\`) {
 		pattern += `\`
@@ -72,8 +73,17 @@ func listDir(path string, cluster int64) ([]Entry, error) {
 		return nil, err
 	}
 	var fd findData
+	flags := uintptr(findExLargeFetch)
+	if !cloudFetch {
+		flags |= findExOnDiskEntriesOnly
+	}
 	h, _, e1 := procFindFirstFileExW.Call(uintptr(unsafe.Pointer(p16)), findExInfoBasic,
-		uintptr(unsafe.Pointer(&fd)), 0, 0, findExLargeFetch)
+		uintptr(unsafe.Pointer(&fd)), 0, 0, flags)
+	if windows.Handle(h) == windows.InvalidHandle && e1 == windows.ERROR_INVALID_PARAMETER && flags != findExLargeFetch {
+		// older systems do not know the extra flag
+		h, _, e1 = procFindFirstFileExW.Call(uintptr(unsafe.Pointer(p16)), findExInfoBasic,
+			uintptr(unsafe.Pointer(&fd)), 0, 0, findExLargeFetch)
+	}
 	if windows.Handle(h) == windows.InvalidHandle {
 		if e1 == windows.ERROR_FILE_NOT_FOUND {
 			return nil, nil
@@ -111,11 +121,19 @@ func listDir(path string, cluster int64) ([]Entry, error) {
 	return out, nil
 }
 
-// allocSize estimates the space a file occupies on disk. Compressed, sparse
-// and cloud files are asked for their real size; others are rounded up to
-// the cluster size.
+// allocSize estimates the space a file occupies on disk without touching the
+// file itself where possible:
+//   - online-only cloud files (OneDrive "available online") occupy nothing
+//   - NTFS-compressed or sparse files are asked for their real size
+//   - everything else is rounded up to the cluster size
+//
+// Cloud files are never opened: every call would go through the cloud filter
+// driver, which is slow with thousands of files.
 func allocSize(dir, name string, attr uint32, size, cluster int64) int64 {
-	if attr&(attrCompressed|attrSparse|attrOffline|attrRecallOnOpen|attrRecallOnAccess) != 0 {
+	if attr&(attrRecallOnAccess|attrRecallOnOpen|attrOffline) != 0 {
+		return 0
+	}
+	if attr&attrReparse == 0 && attr&(attrCompressed|attrSparse) != 0 {
 		p, err := windows.UTF16PtrFromString(extendedPath(joinPath(dir, name)))
 		if err == nil {
 			var high uint32

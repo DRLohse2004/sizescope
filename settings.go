@@ -21,6 +21,7 @@ type Settings struct {
 	ExportDepth   int      `json:"exportDepth"`   // 0 = all levels
 	ExportFiles   bool     `json:"exportFiles"`   // include files in CSV export
 	ConfirmDelete bool     `json:"confirmDelete"` // ask before moving to the recycle bin
+	CloudFetch    bool     `json:"cloudFetch"`    // let OneDrive & co. download online-only folder listings
 	Recent        []string `json:"recent"`
 }
 

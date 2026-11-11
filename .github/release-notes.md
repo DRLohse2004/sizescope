@@ -1,10 +1,7 @@
-Erste Version von SizeScope – portabler Speicherplatz-Analysator für Windows.
+**Download:** `SizeScope.exe` herunterladen und starten, keine Installation nötig. Voraussetzung: Windows 10/11.
 
-**Download:** `SizeScope.exe` herunterladen und starten, keine Installation nötig. Voraussetzung: Windows 10/11 (WebView2 ist dort vorinstalliert).
-
-- Ordnerbaum mit Größe, Belegt, Anteil, Dateien, Ordner, Änderungsdatum – füllt sich live während des Scans
-- Treemap, Dateitypen, größte Dateien, Altersverteilung
-- Explorer, Pfad kopieren, neu einlesen, Papierkorb, CSV-Export, Neustart als Administrator
-- Deutsch/Englisch, hell/dunkel; Einstellungen liegen neben der EXE
+### Neu in 1.0.1
+- Deutlich schnellere Scans von OneDrive- und anderen Cloud-Ordnern: Cloud-Dateien werden nicht mehr einzeln abgefragt, und Ordner werden ohne Download aus dem Internet gelesen.
+- Neue Einstellung „Cloud-Ordner aus dem Internet nachladen“ (standardmäßig aus) für den alten, vollständigen, aber langsamen Weg.
 
 Die EXE ist nicht signiert – Windows SmartScreen fragt beim ersten Start nach („Weitere Informationen“ → „Trotzdem ausführen“).

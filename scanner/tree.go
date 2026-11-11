@@ -78,8 +78,9 @@ type Entry struct {
 
 // Options control a scan.
 type Options struct {
-	Exclude []string // glob patterns matched against entry names (case-insensitive)
-	Workers int
+	Exclude    []string // glob patterns matched against entry names (case-insensitive)
+	Workers    int
+	CloudFetch bool // let cloud providers download folder listings that are only online (slow)
 }
 
 // Tree is the result of one scan.
@@ -230,7 +231,7 @@ func (t *Tree) walk(d *Dir, path string) {
 		return
 	}
 	t.current.Store(path)
-	entries, err := listDir(path, t.cluster)
+	entries, err := listDir(path, t.cluster, t.opts.CloudFetch)
 	errCode := ""
 	if err != nil {
 		errCode = classifyErr(err)
