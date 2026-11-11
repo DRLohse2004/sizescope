@@ -1,10 +1,8 @@
-**Download:** `SizeScope.exe` herunterladen und starten, keine Installation nötig. Voraussetzung: Windows 10/11.
+**Download:** `SizeScope.exe` herunterladen und starten – keine Installation, keine Abhängigkeiten.
 
-### Neu in 1.1.0
-- OneDrive & Co.: Dateien, die nur online gespeichert sind, werden erkannt und standardmäßig ausgelassen – Baum, Karte und Statistiken zeigen nur, was wirklich lokal Platz belegt. Die Statusleiste zeigt, wie viel ausgelassen wurde.
-- Neue Einstellung „Nur online gespeicherte Dateien: Ignorieren / Mitzählen“. Beim Mitzählen sind sie im Baum mit einer Wolke und in der Karte schraffiert markiert.
-
-### 1.0.1
-- Deutlich schnellere Scans von Cloud-Ordnern.
+### Neu in 2.0.0
+- Komplett neue, native Oberfläche: WebView2 wird nicht mehr benötigt. SizeScope läuft damit auch auf Windows-Servern (ab Server 2016) und per RDP.
+- Kleinere EXE, schnellerer Start, Segoe UI wie in Windows; dunkle Titelleiste im dunklen Modus.
+- Alle Funktionen von 1.x bleiben: Ordnerbaum, Treemap, Dateitypen, größte Dateien, Alter, Kontextmenü, Papierkorb, CSV-Export, Admin-Neustart, OneDrive-Erkennung.
 
 Die EXE ist nicht signiert – Windows SmartScreen fragt beim ersten Start nach („Weitere Informationen“ → „Trotzdem ausführen“).

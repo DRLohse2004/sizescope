@@ -1,22 +1,19 @@
 # SizeScope
 
-Portabler Speicherplatz-Analysator für Windows – ähnlich wie TreeSize Free. Eine einzelne EXE, keine Installation.
+Portabler Speicherplatz-Analysator für Windows – ähnlich wie TreeSize Free. Eine einzelne EXE ohne Installation und ohne Abhängigkeiten (kein WebView2, kein .NET), läuft daher auch auf Windows-Servern.
 
 ![Ordnerbaum und Treemap](docs/screenshot.png)
 
 ## Funktionen
 
-- **Ordnerbaum** mit Größe, belegtem Speicher, Anteil am übergeordneten Ordner, Anzahl Dateien/Ordner und Änderungsdatum – sortierbar, Spaltenbreiten anpassbar
-- **Live-Ergebnisse**: Der Baum füllt sich schon während des Scans
+- **Ordnerbaum** mit Größe, belegtem Speicher, Anteil am übergeordneten Ordner, Anzahl Dateien/Ordner und Änderungsdatum – sortierbar, füllt sich schon während des Scans
 - **Treemap** des gewählten Ordners, eingefärbt nach Dateityp oder Ordner
-- **Dateitypen**: Speicher nach Endung und Kategorie
-- **Größte Dateien** (filterbar nach Endung)
-- **Alter**: Speicher nach Änderungsdatum
-- Kontextmenü: Öffnen, im Explorer zeigen, Pfad kopieren, Ordner neu einlesen, in den Papierkorb verschieben
+- **Dateitypen**, **größte Dateien** (filterbar nach Endung) und **Alter** nach Änderungsdatum
+- Kontextmenü: Öffnen, im Explorer zeigen, Pfad kopieren, neu einlesen, in den Papierkorb verschieben
 - CSV-Export, Neustart als Administrator, Ausschlussmuster (z. B. `node_modules`)
 - Deutsch/Englisch, hell/dunkel
 
-Junctions und symbolische Links werden nicht verfolgt (keine Doppelzählung). Dateien, die nur online in OneDrive & Co. liegen, werden standardmäßig ausgelassen (Einstellung „Nur online gespeicherte Dateien“). Cloud-Ordner werden standardmäßig ohne Download gelesen (Einstellung „Cloud-Ordner aus dem Internet nachladen“).
+Junctions und symbolische Links werden nicht verfolgt (keine Doppelzählung). Dateien, die nur online in OneDrive & Co. liegen, werden standardmäßig ausgelassen; Cloud-Ordner werden ohne Download gelesen. Beides ist in den Einstellungen umstellbar.
 
 ## Verwendung
 
@@ -24,29 +21,27 @@ Junctions und symbolische Links werden nicht verfolgt (keine Doppelzählung). Da
 
 Tastatur im Baum: Pfeiltasten, `Enter` öffnen, `F5` neu einlesen, `Entf` Papierkorb, `Strg+C` Pfad kopieren.
 
-**Voraussetzung:** Windows 10/11 mit WebView2-Runtime (ist dort standardmäßig vorhanden).
+**Voraussetzung:** Windows 10/11 oder Windows Server 2016 und neuer (64 Bit). Gezeichnet wird mit Direct3D 11; ohne Grafiktreiber übernimmt Windows das per Software.
 
-**Portabel:** Einstellungen liegen als `SizeScope.settings.json` neben der EXE (falls der Ordner schreibgeschützt ist, unter `%APPDATA%\SizeScope`). WebView2-Daten landen im Temp-Ordner.
+**Portabel:** Einstellungen liegen als `SizeScope.settings.json` neben der EXE (falls der Ordner schreibgeschützt ist, unter `%APPDATA%\SizeScope`).
 
 ## Bauen
 
-Benötigt Go und die Wails-CLI (`go install github.com/wailsapp/wails/v2/cmd/wails@v2.17.1`). Funktioniert auch von Linux aus:
+Benötigt nur Go, funktioniert auch von Linux aus:
 
 ```
-wails build -platform windows/amd64 -skipbindings -s -trimpath -ldflags "-s -w"
+go install github.com/tc-hib/go-winres@latest
+go-winres make --arch amd64
+GOOS=windows go build -trimpath -ldflags "-H windowsgui -s -w" -o build/bin/SizeScope.exe .
 ```
 
-Ergebnis: `build/bin/SizeScope.exe`.
-
-**Release:** Version in `wails.json` (`info.productVersion`) erhöhen und auf `main` pushen – GitHub Actions baut die EXE und legt das Release `v<Version>` an. Text dafür: `.github/release-notes.md`.
-
-Oberfläche ohne Windows testen: `go run -tags dev .` und `http://localhost:34115/dev/index.html` öffnen – das echte Scan-Backend läuft dabei per HTTP.
+**Release:** Versionsnummer in `VERSION` erhöhen und auf `main` pushen – GitHub Actions baut die EXE und legt das Release `v<Version>` an. Text dafür: `.github/release-notes.md`.
 
 ## Aufbau
 
 | Pfad | Inhalt |
 |---|---|
 | `scanner/` | Paralleler Scan, Baum-Modell, Abfragen (Treemap, Typen, Top-Dateien, Export) |
-| `app.go` | Schnittstelle zur Oberfläche |
-| `platform_windows.go` | Laufwerke, Papierkorb, Explorer, Admin-Neustart |
-| `frontend/dist/` | Oberfläche (HTML/CSS/JS ohne Build-Schritt) |
+| `ui_*.go` | Oberfläche mit [Gio](https://gioui.org) |
+| `platform_*.go`, `ui_windows.go` | Laufwerke, Papierkorb, Explorer, Dialoge, Admin-Neustart |
+| `winres/` | Icon, Manifest und Versionsinfo der EXE |

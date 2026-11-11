@@ -1,12 +1,11 @@
 name: build
 
 # Builds SizeScope.exe. A release is created automatically when the version
-# in wails.json (info.productVersion) has no matching tag yet, so releasing
-# means: bump the version, push to main.
+# in VERSION has no matching tag yet, so releasing means: bump VERSION, push.
 on:
   push:
     branches: [main]
-    paths: [wails.json, .github/workflows/build.yml]
+    paths: [VERSION, .github/workflows/build.yml]
     tags: ["v*"]
   workflow_dispatch:
 
@@ -26,12 +25,16 @@ jobs:
       - name: Read version
         id: ver
         run: |
-          v=$(jq -r .info.productVersion wails.json)
+          v=$(tr -d '[:space:]' < VERSION)
           echo "version=$v" >> "$GITHUB_OUTPUT"
           if git rev-parse -q --verify "refs/tags/v$v" >/dev/null; then echo "exists=true"; else echo "exists=false"; fi >> "$GITHUB_OUTPUT"
       - run: go test ./scanner
-      - run: go install github.com/wailsapp/wails/v2/cmd/wails@v2.17.1
-      - run: wails build -platform windows/amd64 -skipbindings -s -trimpath -ldflags "-s -w -X main.appVersion=${{ steps.ver.outputs.version }}"
+      - name: Build
+        run: |
+          v=${{ steps.ver.outputs.version }}
+          go install github.com/tc-hib/go-winres@latest
+          go-winres make --arch amd64 --product-version $v --file-version $v
+          GOOS=windows GOARCH=amd64 go build -trimpath -ldflags "-H windowsgui -s -w -X main.appVersion=$v" -o build/bin/SizeScope.exe .
       - uses: actions/upload-artifact@v4
         with:
           name: SizeScope-windows-amd64
