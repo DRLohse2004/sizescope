@@ -36,7 +36,9 @@ Benötigt Go und die Wails-CLI (`go install github.com/wailsapp/wails/v2/cmd/wai
 wails build -platform windows/amd64 -skipbindings -s -trimpath -ldflags "-s -w"
 ```
 
-Ergebnis: `build/bin/SizeScope.exe`. Ein Tag `v*` baut die EXE per GitHub Actions und hängt sie an ein Release.
+Ergebnis: `build/bin/SizeScope.exe`.
+
+**Release:** Version in `wails.json` (`info.productVersion`) erhöhen und auf `main` pushen – GitHub Actions baut die EXE und legt das Release `v<Version>` an. Text dafür: `.github/release-notes.md`.
 
 Oberfläche ohne Windows testen: `go run -tags dev .` und `http://localhost:34115/dev/index.html` öffnen – das echte Scan-Backend läuft dabei per HTTP.
 

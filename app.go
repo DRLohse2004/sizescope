@@ -13,7 +13,8 @@ import (
 	"sizescope/scanner"
 )
 
-const appVersion = "1.0.0"
+// appVersion is overridden at build time via -ldflags "-X main.appVersion=..."
+var appVersion = "1.0.0"
 
 // App is bound to the frontend; every exported method is callable from JS.
 type App struct {

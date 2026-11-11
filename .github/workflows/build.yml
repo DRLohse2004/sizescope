@@ -1,7 +1,12 @@
 name: build
 
+# Builds SizeScope.exe. A release is created automatically when the version
+# in wails.json (info.productVersion) has no matching tag yet, so releasing
+# means: bump the version, push to main.
 on:
   push:
+    branches: [main]
+    paths: [wails.json, .github/workflows/build.yml]
     tags: ["v*"]
   workflow_dispatch:
 
@@ -13,18 +18,30 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: actions/setup-go@v5
         with:
           go-version-file: go.mod
+      - name: Read version
+        id: ver
+        run: |
+          v=$(jq -r .info.productVersion wails.json)
+          echo "version=$v" >> "$GITHUB_OUTPUT"
+          if git rev-parse -q --verify "refs/tags/v$v" >/dev/null; then echo "exists=true"; else echo "exists=false"; fi >> "$GITHUB_OUTPUT"
       - run: go test ./scanner
       - run: go install github.com/wailsapp/wails/v2/cmd/wails@v2.17.1
-      - run: wails build -platform windows/amd64 -skipbindings -s -trimpath -ldflags "-s -w"
+      - run: wails build -platform windows/amd64 -skipbindings -s -trimpath -ldflags "-s -w -X main.appVersion=${{ steps.ver.outputs.version }}"
       - uses: actions/upload-artifact@v4
         with:
           name: SizeScope-windows-amd64
           path: build/bin/SizeScope.exe
-      - if: startsWith(github.ref, 'refs/tags/')
+      - name: Release
+        if: steps.ver.outputs.exists == 'false' || startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@v2
         with:
+          tag_name: ${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || format('v{0}', steps.ver.outputs.version) }}
+          target_commitish: ${{ github.sha }}
+          name: SizeScope ${{ steps.ver.outputs.version }}
+          body_path: .github/release-notes.md
           files: build/bin/SizeScope.exe
-          generate_release_notes: true
