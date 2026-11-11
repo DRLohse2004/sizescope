@@ -27,7 +27,7 @@ import (
 )
 
 // appVersion is overridden at build time via -ldflags "-X main.appVersion=...".
-var appVersion = "2.0.0"
+var appVersion = "2.0.1"
 
 func main() {
 	u := newUI()
@@ -134,12 +134,30 @@ func newUI() *UI {
 	u.pathEd.SingleLine = true
 	u.pathEd.Submit = true
 	u.admin = isAdmin()
-	u.drives = listDrives()
+	// disconnected network drives can take seconds to answer: load in the background
+	u.goSafe(func() {
+		d := listDrives()
+		u.post(func() { u.drives = d })
+	})
 	if len(os.Args) > 1 && !strings.HasPrefix(os.Args[1], "-") {
 		u.startArg = os.Args[1]
 	}
 	u.applySettings()
 	return u
+}
+
+// goSafe runs f in the background; a panic is reported as an error message
+// instead of terminating the program.
+func (u *UI) goSafe(f func()) {
+	go func() {
+		defer func() {
+			if r := recover(); r != nil {
+				msg := fmt.Sprint(r)
+				u.post(func() { u.toast(u.t("eGeneric", "msg", msg), true) })
+			}
+		}()
+		f()
+	}()
 }
 
 // post runs f on the window goroutine before the next frame (safe from any goroutine).
@@ -395,13 +413,7 @@ func (u *UI) openDrivePopover(at image.Point) {
 		if d.Total > 0 {
 			hint = u.t("driveFree", "free", u.size(d.Free))
 		}
-		icon := ic.drive
-		if d.Kind == "network" {
-			icon = ic.net
-		} else if d.Kind == "removable" {
-			icon = ic.usb
-		}
-		items = append(items, menuItem{icon: icon, label: lbl, hint: hint, action: func() { u.startScan(d.Path) }})
+		items = append(items, menuItem{icon: driveIcon(d.Kind), label: lbl, hint: hint, action: func() { u.startScan(d.Path) }})
 	}
 	u.popover = &Menu{at: at, items: items, btns: make([]widget.Clickable, len(items))}
 }
@@ -440,13 +452,7 @@ func (u *UI) welcome(gtx layout.Context, r image.Rectangle) {
 					bc = u.pal.Accent
 				}
 				strokeRR(gtx, box, d(10), 1, bc)
-				icon := ic.drive
-				if dr.Kind == "network" {
-					icon = ic.net
-				} else if dr.Kind == "removable" {
-					icon = ic.usb
-				}
-				u.icon(gtx, icon, image.Rect(d(18), (sz.Y-d(30))/2, d(48), (sz.Y+d(30))/2), u.pal.Muted)
+				u.icon(gtx, driveIcon(dr.Kind), image.Rect(d(18), (sz.Y-d(30))/2, d(48), (sz.Y+d(30))/2), u.pal.Muted)
 				tx := d(66)
 				goW := d(90)
 				name := strings.TrimSuffix(dr.Path, `\`)
@@ -459,11 +465,12 @@ func (u *UI) welcome(gtx layout.Context, r image.Rectangle) {
 					lbl += " (" + dr.FS + ")"
 				}
 				u.text(gtx, image.Rect(tx+nw+d(8), d(10), sz.X-goW, d(32)), lbl, 13, u.pal.Muted, font.Normal, text.Start)
-				if dr.Total > 0 {
-					used := dr.Total - dr.Free
+				switch {
+				case dr.Total > 0:
+					used := max(dr.Total-dr.Free, 0)
 					bar := image.Rect(tx, d(38), sz.X-goW, d(46))
 					fillRR(gtx, bar, d(4), u.pal.BarTrack)
-					fw := int(float64(bar.Dx()) * float64(used) / float64(dr.Total))
+					fw := min(int(float64(bar.Dx())*float64(used)/float64(dr.Total)), bar.Dx())
 					col := u.pal.Accent
 					if float64(used)/float64(dr.Total) > 0.9 {
 						col = u.pal.Danger
@@ -471,6 +478,10 @@ func (u *UI) welcome(gtx layout.Context, r image.Rectangle) {
 					fillRR(gtx, image.Rect(bar.Min.X, bar.Min.Y, bar.Min.X+fw, bar.Max.Y), d(4), col)
 					meta := u.t("driveUsed", "used", u.size(used), "total", u.size(dr.Total)) + ", " + u.t("driveFree", "free", u.size(dr.Free))
 					u.text(gtx, image.Rect(tx, d(50), sz.X-goW, d(68)), meta, 12, u.pal.Muted, font.Normal, text.Start)
+				case dr.Free > 0:
+					u.text(gtx, image.Rect(tx, d(38), sz.X-goW, d(56)), u.t("driveFree", "free", u.size(dr.Free)), 12, u.pal.Muted, font.Normal, text.Start)
+				default:
+					u.text(gtx, image.Rect(tx, d(38), sz.X-goW, d(56)), u.t("driveOffline"), 12, u.pal.Faint, font.Normal, text.Start)
 				}
 				u.text(gtx, image.Rect(sz.X-goW, 0, sz.X-d(18), sz.Y), u.t("driveScan"), 13, u.pal.Accent, font.SemiBold, text.End)
 				pointer.CursorPointer.Add(gtx.Ops)
@@ -591,7 +602,7 @@ func (u *UI) scanbar(gtx layout.Context, r image.Rectangle) {
 
 	tot, free := diskUsage(t.RootPath)
 	if tot > 0 {
-		used := tot - free
+		used := max(tot-free, 0)
 		scanned := t.Root.Size()
 		if scanned > used {
 			scanned = used
@@ -606,8 +617,8 @@ func (u *UI) scanbar(gtx layout.Context, r image.Rectangle) {
 		cy := r.Min.Y + r.Dy()/2
 		bar := image.Rect(vr.Min.X, cy-d(5), vr.Min.X+barW, cy+d(5))
 		fillRR(gtx, bar, d(5), u.pal.BarTrack)
-		sw := int(float64(barW) * float64(scanned) / float64(tot))
-		ow := int(float64(barW) * float64(used-scanned) / float64(tot))
+		sw := min(int(float64(barW)*float64(max(scanned, 0))/float64(tot)), barW)
+		ow := min(int(float64(barW)*float64(max(used-scanned, 0))/float64(tot)), barW-sw)
 		within(gtx, bar, func(gtx layout.Context) {
 			fillRR(gtx, image.Rect(0, 0, bar.Dx(), bar.Dy()), d(5), u.pal.BarTrack)
 			fill(gtx, image.Rect(0, 0, sw, bar.Dy()), u.pal.Accent)
@@ -831,19 +842,19 @@ func (u *UI) askDelete(key string) {
 		return
 	}
 	msg := u.t("confirmText", "name", name, "size", u.size(size)) + "\n\n" + p
-	go func() {
+	u.goSafe(func() {
 		if confirm(u.hwnd, u.t("confirmTitle"), msg) {
 			u.post(do)
 		}
-	}()
+	})
 }
 
 func (u *UI) pickFolder() {
-	go func() {
+	u.goSafe(func() {
 		if p := pickFolderDialog(u.hwnd); p != "" {
 			u.post(func() { u.startScan(p) })
 		}
-	}()
+	})
 }
 
 func (u *UI) export() {
@@ -862,7 +873,7 @@ func (u *UI) export() {
 	s := u.settings
 	name := strings.Trim(strings.NewReplacer(`\`, "_", ":", "", "/", "_").Replace(d.Name), "_")
 	def := "SizeScope_" + name + "_" + time.Now().Format("2006-01-02") + ".csv"
-	go func() {
+	u.goSafe(func() {
 		path := saveFileDialog(u.hwnd, def)
 		if path == "" {
 			return
@@ -875,7 +886,7 @@ func (u *UI) export() {
 				u.toast(u.t("exported", "path", path), false)
 			}
 		})
-	}()
+	})
 }
 
 func writeCSV(t *scanner.Tree, d *scanner.Dir, path string, s Settings) error {
@@ -943,4 +954,14 @@ func (u *UI) itemMenu(at image.Point, key string, origin string) {
 		items = append(items, menuItem{sep: true}, menuItem{icon: ic.trash, label: u.t("mDelete"), hint: del, danger: true, action: func() { u.askDelete(key) }})
 	}
 	u.openMenu(at, items)
+}
+
+func driveIcon(kind string) *widget.Icon {
+	switch kind {
+	case "network":
+		return ic.share
+	case "removable":
+		return ic.usb
+	}
+	return ic.drive
 }

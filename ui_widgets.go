@@ -30,7 +30,7 @@ func mustIcon(data []byte) *widget.Icon {
 
 var ic = struct {
 	folder, file, chevron, chevronDown, drive, net, usb, pick, export, shield, gear, play, stop,
-	open, copy, refresh, target, trash, mapIc, cloud, close, check, arrowDown, arrowUp *widget.Icon
+	open, copy, refresh, target, trash, mapIc, cloud, close, check, arrowDown, arrowUp, share *widget.Icon
 }{
 	folder: mustIcon(icons.FileFolder), file: mustIcon(icons.EditorInsertDriveFile),
 	chevron: mustIcon(icons.NavigationChevronRight), chevronDown: mustIcon(icons.NavigationExpandMore),
@@ -41,6 +41,7 @@ var ic = struct {
 	target: mustIcon(icons.MapsMyLocation), trash: mustIcon(icons.ActionDelete), mapIc: mustIcon(icons.ActionDashboard),
 	cloud: mustIcon(icons.FileCloud), close: mustIcon(icons.NavigationClose), check: mustIcon(icons.NavigationCheck),
 	arrowDown: mustIcon(icons.NavigationArrowDropDown), arrowUp: mustIcon(icons.NavigationArrowDropUp),
+	share: mustIcon(icons.FileFolderShared),
 }
 
 // ---------------------------------------------------------------- pointer helpers

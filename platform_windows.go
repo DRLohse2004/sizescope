@@ -70,7 +70,12 @@ func diskUsage(path string) (total, free int64) {
 	if windows.GetDiskFreeSpaceEx(p16, &avail, &tot, &totFree) != nil {
 		return 0, 0
 	}
-	return int64(tot), int64(totFree)
+	// tot and avail both honour disk quotas (network shares); totFree is
+	// volume-wide and must not be mixed with tot.
+	if avail > tot {
+		return 0, int64(avail) // inconsistent share: only the free space is meaningful
+	}
+	return int64(tot), int64(avail)
 }
 
 func showInExplorer(path string, isDir bool) error {

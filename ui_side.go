@@ -63,7 +63,7 @@ func (u *UI) requestSide() {
 	seq := u.side.seq
 	u.side.mu.Unlock()
 	u.buildCrumbs(key)
-	go func() {
+	u.goSafe(func() {
 		d, idx, ok := t.Resolve(key)
 		if !ok || idx >= 0 {
 			d = t.Root
@@ -109,7 +109,7 @@ func (u *UI) requestSide() {
 				s.ages = ages
 			}
 		})
-	}()
+	})
 }
 
 func (u *UI) buildCrumbs(key string) {

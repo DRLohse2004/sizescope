@@ -174,6 +174,8 @@ func (u *UI) layoutSettings(gtx layout.Context) {
 		dl.scroll = 0
 	}
 	within(gtx, content, func(gtx layout.Context) {
+		// registered first so it lies below the controls and only catches the wheel
+		hitArea(gtx, image.Rectangle{Max: content.Size()}, &dl.list.tag, pointer.CursorDefault)
 		y := -dl.scroll
 		cw := content.Dx()
 		for _, r := range rows {
@@ -195,7 +197,6 @@ func (u *UI) layoutSettings(gtx layout.Context) {
 			ty := (ch - th) * dl.scroll / maxScroll
 			fillRR(gtx, image.Rect(cw-d(4), ty, cw, ty+th), d(2), u.pal.Line)
 		}
-		hitArea(gtx, image.Rectangle{Max: content.Size()}, &dl.list.tag, pointer.CursorDefault)
 	})
 
 	by := box.Max.Y - d(52)

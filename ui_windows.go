@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"unicode/utf16"
 	"unsafe"
 
 	"gioui.org/app"
@@ -160,7 +161,8 @@ func saveFileDialog(hwnd uintptr, defName string) string {
 	defer runtime.UnlockOSThread()
 	buf := make([]uint16, 32768)
 	copy(buf, windows.StringToUTF16(defName))
-	filter := windows.StringToUTF16("CSV (*.csv)\x00*.csv\x00\x00")
+	// the filter is a list of NUL-separated strings; StringToUTF16 rejects NULs
+	filter := utf16.Encode([]rune("CSV (*.csv)\x00*.csv\x00\x00"))
 	ext, _ := windows.UTF16PtrFromString("csv")
 	ofn := openFileName{Owner: hwnd, Filter: &filter[0], File: &buf[0], MaxFile: uint32(len(buf)), DefExt: ext,
 		Flags: 0x2 | 0x800 | 0x80000} // overwrite prompt, path must exist, explorer
