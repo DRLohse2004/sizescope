@@ -82,6 +82,7 @@
     <span id="stFiles"></span>
     <span id="stDirs"></span>
     <span id="stErrors" class="st-errors" hidden></span>
+    <span id="stOnline" class="st-online" hidden></span>
     <span class="spacer"></span>
     <span id="stCurrent" class="st-current"></span>
     <span id="stTime"></span>
@@ -134,6 +135,10 @@
       <input type="checkbox" name="exportFiles">
       <label data-i18n="sConfirmDelete"></label>
       <input type="checkbox" name="confirmDelete">
+      <label data-i18n="sOnline"></label>
+      <div><select name="onlineFiles"><option value="skip" data-i18n="sOnlineSkip"></option><option value="count" data-i18n="sOnlineCount"></option></select><small data-i18n="sOnlineHint"></small></div>
+      <label data-i18n="sCloudFetch"></label>
+      <div><input type="checkbox" name="cloudFetch"><small data-i18n="sCloudFetchHint"></small></div>
     </div>
     <p class="about" id="about"></p>
     <div class="dlg-actions">

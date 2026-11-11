@@ -27,6 +27,7 @@ const ICON = {
   expand: '<svg viewBox="0 0 20 20"><path d="M6 8l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>',
   play: '<svg viewBox="0 0 20 20"><path d="M6 4.5v11l9-5.5z" fill="currentColor"/></svg>',
   stop: '<svg viewBox="0 0 20 20"><rect x="5" y="5" width="10" height="10" rx="1.5" fill="currentColor"/></svg>',
+  cloud: '<svg viewBox="0 0 20 20"><path d="M6 15.5h8.5a3.5 3.5 0 0 0 .4-7A5 5 0 0 0 5.2 9.6 3 3 0 0 0 6 15.5z" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>',
 };
 
 // ---------------------------------------------------------------- state
@@ -237,6 +238,11 @@ function renderStatus() {
   se.hidden = st.errors === 0;
   se.textContent = t("stErrors", { n: num(st.errors) });
   se.title = !S.admin && S.platform === "windows" ? t("adminHint") : "";
+  const so = $("#stOnline");
+  so.hidden = !st.onlineFiles;
+  if (st.onlineFiles) {
+    so.innerHTML = ICON.cloud + esc(t(st.skipOnline ? "stOnlineSkipped" : "stOnlineCounted", { n: num(st.onlineFiles), size: fmtSize(st.onlineBytes) }));
+  }
   $("#stCurrent").textContent = running ? st.current : "";
   $("#stTime").textContent = running ? "" : "";
 }
@@ -342,6 +348,7 @@ function rowHtml(item, i) {
   let badge = "";
   if (r.err) badge = `<span class="badge">${t(r.err === "denied" ? "errDenied" : "errOther")}</span>`;
   else if (r.linked) badge = `<span class="badge link">${t("linked")}</span>`;
+  else if (r.online) badge = `<span class="badge cloud" title="${esc(t("onlineOnly"))}">${ICON.cloud}</span>`;
   else if (r.isDir && !r.done) badge = `<span class="busy-dot"></span>`;
   const name = item.depth === 0 ? S.status.rootPath : r.name;
   return `<div class="row tree-cols${r.key === S.selected ? " sel" : ""}" data-i="${i}">
@@ -615,7 +622,8 @@ async function renderMap(key) {
   map.setSelected(S.selected);
   const lg = $("#mapLegend");
   if (S.settings.mapColor === "depth") { lg.innerHTML = ""; return; }
-  lg.innerHTML = CATEGORIES.map((c) => `<span><i style="background:${catColor(c)}"></i>${esc(t("cat_" + c))}</span>`).join("");
+  lg.innerHTML = CATEGORIES.map((c) => `<span><i style="background:${catColor(c)}"></i>${esc(t("cat_" + c))}</span>`).join("") +
+    (S.status.onlineFiles && !S.status.skipOnline ? `<span><i class="hatch"></i>${esc(t("onlineOnly"))}</span>` : "");
 }
 
 function showTip(n, e) {
@@ -624,7 +632,7 @@ function showTip(n, e) {
   const total = S.status.root.size;
   const share = total > 0 ? (n.s / total) * 100 : 0;
   const title = n.r ? t("restItems", { n: num(n.r) }) : n.n;
-  const sub = n.d ? t("cat_folder") : n.r ? "" : t("cat_" + catOf(n.e || extOf(n.n)));
+  const sub = n.d ? t("cat_folder") : n.r ? "" : t("cat_" + catOf(n.e || extOf(n.n))) + (n.o ? ", " + t("onlineOnly") : "");
   tip.innerHTML = `<b>${esc(title)}</b><span>${fmtSize(n.s)}  (${fmtPct(share)})</span>${sub ? `<div class="tp">${esc(sub)}</div>` : ""}`;
   tip.hidden = false;
   const r = tip.getBoundingClientRect();

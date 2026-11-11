@@ -60,6 +60,8 @@ func extendedPath(p string) string {
 	return `\\?\` + p
 }
 
+const onlineOnlySupported = true
+
 func isCloudTag(tag uint32) bool { return tag&0xFFFF0FFF == 0x9000001A }
 
 func listDir(path string, cluster int64, cloudFetch bool) ([]Entry, error) {
@@ -105,6 +107,7 @@ func listDir(path string, cluster int64, cloudFetch bool) ([]Entry, error) {
 				e.Linked = true // junction, symlink, mount point
 			}
 			if !e.IsDir {
+				e.Online = fd.Attr&(attrRecallOnAccess|attrOffline) != 0
 				e.Size = int64(fd.SizeHigh)<<32 | int64(fd.SizeLow)
 				e.Alloc = allocSize(path, name, fd.Attr, e.Size, cluster)
 			}

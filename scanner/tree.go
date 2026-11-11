@@ -71,6 +71,7 @@ type Entry struct {
 	Name   string
 	IsDir  bool
 	Linked bool // reparse point / symlink that must not be followed
+	Online bool // cloud file that is only stored online (no local data)
 	Size   int64
 	Alloc  int64
 	MTime  int64
@@ -81,6 +82,7 @@ type Options struct {
 	Exclude    []string // glob patterns matched against entry names (case-insensitive)
 	Workers    int
 	CloudFetch bool // let cloud providers download folder listings that are only online (slow)
+	SkipOnline bool // leave out files that are only stored online (OneDrive "available online")
 }
 
 // Tree is the result of one scan.
@@ -95,6 +97,7 @@ type Tree struct {
 	finished atomic.Int64 // unix ms, 0 while running
 
 	files, dirs, bytes, errors atomic.Int64
+	onlineFiles, onlineBytes   atomic.Int64
 	current                    atomic.Value // string
 
 	opts     Options
@@ -178,6 +181,9 @@ func (t *Tree) Cancel() {
 	}
 }
 
+// SkipOnline reports whether online-only files are left out of this scan.
+func (t *Tree) SkipOnline() bool { return t.opts.SkipOnline }
+
 // Running reports whether the scan is still in progress.
 func (t *Tree) Running() bool { return t.finished.Load() == 0 }
 
@@ -191,6 +197,7 @@ func (t *Tree) Wait() {
 // Stats is a progress snapshot.
 type Stats struct {
 	Files, Dirs, Bytes, Errors int64
+	OnlineFiles, OnlineBytes   int64 // online-only cloud files seen (counted or skipped)
 	Elapsed                    time.Duration
 	Current                    string
 	Canceled                   bool
@@ -203,6 +210,7 @@ func (t *Tree) Stats() Stats {
 	}
 	s := Stats{
 		Files: t.files.Load(), Dirs: t.dirs.Load(), Bytes: t.bytes.Load(), Errors: t.errors.Load(),
+		OnlineFiles: t.onlineFiles.Load(), OnlineBytes: t.onlineBytes.Load(),
 		Elapsed: end.Sub(t.Started),
 	}
 	s.Current, _ = t.current.Load().(string)
@@ -240,7 +248,7 @@ func (t *Tree) walk(d *Dir, path string) {
 
 	var files []File
 	var subs []*Dir
-	var own, ownAlloc, newest int64
+	var own, ownAlloc, newest, onlineN, onlineB int64
 	for _, e := range entries {
 		if t.excluded(e.Name) {
 			continue
@@ -254,6 +262,13 @@ func (t *Tree) walk(d *Dir, path string) {
 			c.mtime.Store(e.MTime)
 			subs = append(subs, c)
 			continue
+		}
+		if e.Online {
+			onlineN++
+			onlineB += e.Size
+			if t.opts.SkipOnline {
+				continue
+			}
 		}
 		files = append(files, File{Name: e.Name, Size: e.Size, Alloc: e.Alloc, MTime: e.MTime})
 		own += e.Size
@@ -272,6 +287,10 @@ func (t *Tree) walk(d *Dir, path string) {
 	t.files.Add(int64(len(files)))
 	t.dirs.Add(int64(len(subs)))
 	t.bytes.Add(own)
+	if onlineN > 0 {
+		t.onlineFiles.Add(onlineN)
+		t.onlineBytes.Add(onlineB)
+	}
 	addUp(d, own, ownAlloc, int64(len(files)), int64(len(subs)), newest)
 
 	toWalk := make([]*Dir, 0, len(subs))
@@ -419,6 +438,8 @@ func (t *Tree) Rescan(d *Dir) {
 	t.dirs.Store(0)
 	t.bytes.Store(0)
 	t.errors.Store(0)
+	t.onlineFiles.Store(0)
+	t.onlineBytes.Store(0)
 	go func() {
 		t.walk(d, path)
 		t.wg.Wait()

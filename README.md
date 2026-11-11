@@ -16,7 +16,7 @@ Portabler Speicherplatz-Analysator für Windows – ähnlich wie TreeSize Free. 
 - CSV-Export, Neustart als Administrator, Ausschlussmuster (z. B. `node_modules`)
 - Deutsch/Englisch, hell/dunkel
 
-Junctions und symbolische Links werden nicht verfolgt (keine Doppelzählung). OneDrive-Dateien werden mitgezählt; „Belegt“ zeigt, was davon wirklich lokal liegt. Cloud-Ordner werden standardmäßig ohne Download gelesen (Einstellung „Cloud-Ordner aus dem Internet nachladen“).
+Junctions und symbolische Links werden nicht verfolgt (keine Doppelzählung). Dateien, die nur online in OneDrive & Co. liegen, werden standardmäßig ausgelassen (Einstellung „Nur online gespeicherte Dateien“). Cloud-Ordner werden standardmäßig ohne Download gelesen (Einstellung „Cloud-Ordner aus dem Internet nachladen“).
 
 ## Verwendung
 

@@ -37,6 +37,8 @@ func listDir(path string, cluster int64, _ bool) ([]Entry, error) {
 	return out, err
 }
 
+const onlineOnlySupported = false
+
 func clusterSize(string) int64 { return 4096 }
 
 func classifyErr(err error) string {

@@ -113,7 +113,7 @@ class Treemap {
       ctx.fillStyle = g;
       ctx.fillRect(x + gx, y + gy, w - 2 * gx, h - 2 * gy);
     }
-    if (node.r) { // aggregated small items: hatch
+    if (node.r || node.o) { // aggregated small items or online-only file: hatch
       ctx.save();
       ctx.beginPath(); ctx.rect(x, y, w, h); ctx.clip();
       ctx.strokeStyle = "rgba(255,255,255,.22)"; ctx.lineWidth = 1;

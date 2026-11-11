@@ -25,6 +25,7 @@ type Row struct {
 	Done    bool   `json:"done"`
 	Err     string `json:"err,omitempty"`
 	Linked  bool   `json:"linked,omitempty"`
+	Online  bool   `json:"online,omitempty"` // file has data but occupies no local space (cloud placeholder)
 	Ext     string `json:"ext,omitempty"`
 }
 
@@ -41,8 +42,12 @@ func fileRow(d *Dir, i int, f File) Row {
 	return Row{
 		Key: "f" + strconv.Itoa(int(d.ID)) + ":" + strconv.Itoa(i), Name: f.Name,
 		Size: f.Size, Alloc: f.Alloc, Files: 1, MTime: f.MTime, Done: true, Ext: Ext(f.Name),
+		Online: onlineOnly(f),
 	}
 }
+
+// onlineOnly reports cloud placeholders: content exists, but nothing is stored locally.
+func onlineOnly(f File) bool { return onlineOnlySupported && f.Size > 0 && f.Alloc == 0 }
 
 // Ext returns the lower-case extension without dot ("" if none).
 // Trailing numeric parts are treated as version numbers: "lib.so.1.2" -> "so".
@@ -167,6 +172,7 @@ type MapNode struct {
 	Dir  bool       `json:"d,omitempty"`
 	Ext  string     `json:"e,omitempty"`
 	Rest int        `json:"r,omitempty"` // >0: aggregated "N small items"
+	On   bool       `json:"o,omitempty"` // online-only file
 	Kids []*MapNode `json:"c,omitempty"`
 }
 
@@ -206,7 +212,7 @@ func (t *Tree) Treemap(d *Dir, maxNodes int, minFrac float64) *MapNode {
 				restN++
 				continue
 			}
-			kids = append(kids, &MapNode{Key: "f" + strconv.Itoa(int(it.d.ID)) + ":" + strconv.Itoa(i), Name: f.Name, Size: f.Size, Ext: Ext(f.Name)})
+			kids = append(kids, &MapNode{Key: "f" + strconv.Itoa(int(it.d.ID)) + ":" + strconv.Itoa(i), Name: f.Name, Size: f.Size, Ext: Ext(f.Name), On: onlineOnly(f)})
 		}
 		if restN > 0 {
 			kids = append(kids, &MapNode{Name: "", Size: restSize, Rest: restN})

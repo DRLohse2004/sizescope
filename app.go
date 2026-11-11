@@ -14,7 +14,7 @@ import (
 )
 
 // appVersion is overridden at build time via -ldflags "-X main.appVersion=..."
-var appVersion = "1.0.1"
+var appVersion = "1.1.0"
 
 // App is bound to the frontend; every exported method is callable from JS.
 type App struct {
@@ -107,7 +107,7 @@ func (a *App) StartScan(path string) error {
 	if a.tree != nil {
 		a.tree.Cancel()
 	}
-	t := scanner.NewTree(path, scanner.Options{Exclude: a.settings.Exclude, CloudFetch: a.settings.CloudFetch})
+	t := scanner.NewTree(path, scanner.Options{Exclude: a.settings.Exclude, CloudFetch: a.settings.CloudFetch, SkipOnline: a.settings.OnlineFiles != "count"})
 	a.tree = t
 	// remember recently scanned folders
 	rec := []string{t.RootPath}
@@ -141,6 +141,9 @@ type Status struct {
 	Dirs      int64       `json:"dirs"`
 	Bytes     int64       `json:"bytes"`
 	Errors    int64       `json:"errors"`
+	OnlineN   int64       `json:"onlineFiles"`
+	OnlineB   int64       `json:"onlineBytes"`
+	SkipOnl   bool        `json:"skipOnline"`
 	ElapsedMs int64       `json:"elapsedMs"`
 	Current   string      `json:"current"`
 	VolTotal  int64       `json:"volTotal"`
@@ -158,6 +161,7 @@ func (a *App) Status() Status {
 		Has: true, ID: t.ID, Running: t.Running(), Canceled: s.Canceled,
 		Root: scanner.DirRow(t.Root), RootPath: t.RootPath,
 		Files: s.Files, Dirs: s.Dirs, Bytes: s.Bytes, Errors: s.Errors,
+		OnlineN: s.OnlineFiles, OnlineB: s.OnlineBytes, SkipOnl: t.SkipOnline(),
 		ElapsedMs: s.Elapsed.Milliseconds(), Current: s.Current, VolTotal: tot, VolFree: free,
 	}
 }
