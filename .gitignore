@@ -1,0 +1,5 @@
+build/bin/
+*.exe
+*.syso
+frontend/dev/node_modules/
+frontend/wailsjs/

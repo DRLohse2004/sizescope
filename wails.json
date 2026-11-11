@@ -1,0 +1,16 @@
+{
+  "$schema": "https://wails.io/schemas/config.v2.json",
+  "name": "SizeScope",
+  "outputfilename": "SizeScope",
+  "frontend:dir": "frontend",
+  "frontend:install": "",
+  "frontend:build": "",
+  "author": { "name": "SizeScope contributors" },
+  "info": {
+    "companyName": "SizeScope",
+    "productName": "SizeScope",
+    "productVersion": "1.0.0",
+    "copyright": "",
+    "comments": "Portable disk space analyzer"
+  }
+}
