@@ -27,7 +27,7 @@ import (
 )
 
 // appVersion is overridden at build time via -ldflags "-X main.appVersion=...".
-var appVersion = "2.0.3"
+var appVersion = "2.1.0"
 
 func main() {
 	u := newUI()
@@ -104,6 +104,8 @@ type UI struct {
 	btnScan, btnStop, btnPick, btnDrives, btnExport, btnAdmin, btnSet widget.Clickable
 	btnErrors                                                         widget.Clickable
 	btnBannerAdmin, btnBannerClose                                    widget.Clickable
+	btnCleanup                                                        widget.Clickable
+	cleanup                                                           *cleanDlg
 	backupActive                                                      bool
 	bannerClosed                                                      bool
 	driveBtns                                                         []widget.Clickable
@@ -297,6 +299,9 @@ func (u *UI) frame(gtx layout.Context) {
 	if u.dlg != nil {
 		u.layoutSettings(gtx)
 	}
+	if u.cleanup != nil {
+		u.layoutCleanup(gtx)
+	}
 	if u.menu == nil && u.dlg == nil {
 		u.layoutTip(gtx)
 	}
@@ -316,6 +321,9 @@ func (u *UI) globalKeys(gtx layout.Context) {
 		switch e.Name {
 		case key.NameEscape:
 			u.menu, u.popover, u.dlg = nil, nil, nil
+			if u.cleanup != nil && u.cleanup.phase != phaseRunning {
+				u.cleanup = nil
+			}
 		case key.NameF5:
 			if u.tree != nil && u.selected != "" {
 				u.rescan(u.dirKeyOf(u.selected))
@@ -408,6 +416,11 @@ func (u *UI) toolbar(gtx layout.Context, r image.Rectangle) {
 	x -= h + d(2)
 	if u.iconButton(gtx, &u.btnExport, image.Rect(x, y, x+h, y+h), ic.export, u.pal.Muted, u.tree != nil && !running) {
 		u.export()
+	}
+	cw := u.textWidth(gtx, u.t("cleanupBtn"), 13, font.Normal) + d(52)
+	x -= cw + d(6)
+	if u.button(gtx, &u.btnCleanup, image.Rect(x, y, x+cw, y+h), u.t("cleanupBtn"), ic.sweep, btnPlain) {
+		u.openCleanup()
 	}
 }
 

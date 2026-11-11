@@ -1,6 +1,12 @@
 **Download:** `SizeScope.exe` herunterladen und starten – keine Installation, keine Abhängigkeiten.
 
-### Neu in 2.0.3
+### Neu in 2.1.0
+- **Bereinigen**: neuer Knopf in der Toolbar. Mitgeliefert: Temp (eigener Benutzer / alle Benutzer / Windows), Windows-Update-Downloads, Übermittlungsoptimierung, Fehlerberichte und Speicherabbilder, Browser-Caches, Miniaturansichten, Papierkorb, IIS- und Setup-Protokolle, Komponentenspeicher (DISM).
+- Vorschau vor dem Löschen; danach Übersicht, was wo bereinigt wurde, wie viel Platz frei wurde und welche Dateien übersprungen wurden.
+- Eigene Bereinigungen als JSON-Regel oder PowerShell-Skript importieren (Format im README, Beispiele unter `examples/cleanups`).
+- Behoben: Klicks in scrollbaren Listen mit Bedienelementen.
+
+### 2.0.3
 - Als Administrator werden jetzt auch geschützte Ordner wie „System Volume Information“ gelesen (Windows-Sicherungsrecht, nur Auflisten). In den Einstellungen abschaltbar.
 - Statusleiste erklärt bei Admin-Rechten, dass verbleibende Ordner auch für Administratoren gesperrt sind.
 - Leere Ordner zeigen in der Karte einen Hinweis statt einer leeren Fläche.

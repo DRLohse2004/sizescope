@@ -1,0 +1,8 @@
+{
+  "name": { "de": "Microsoft-Teams-Cache", "en": "Microsoft Teams cache" },
+  "description": { "de": "Cache des neuen Teams (Teams vorher beenden).", "en": "Cache of the new Teams (close Teams first)." },
+  "targets": [
+    { "path": "%LOCALAPPDATA%\\Packages\\MSTeams_8wekyb3d8bbwe\\LocalCache\\Microsoft\\MSTeams\\EBWebView\\Default\\Cache" },
+    { "path": "%LOCALAPPDATA%\\Packages\\MSTeams_8wekyb3d8bbwe\\LocalCache\\Microsoft\\MSTeams\\EBWebView\\Default\\Code Cache" }
+  ]
+}

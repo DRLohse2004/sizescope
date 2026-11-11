@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"gioui.org/font"
+	"gioui.org/io/event"
 	"gioui.org/io/pointer"
 	"gioui.org/layout"
 	"gioui.org/op"
@@ -176,8 +177,8 @@ func (u *UI) layoutSettings(gtx layout.Context) {
 	maxScroll := max(total-content.Dy(), 0)
 	dl.scroll = min(max(dl.scroll, 0), maxScroll)
 	within(gtx, content, func(gtx layout.Context) {
-		// registered first so it lies below the controls and only catches the wheel
-		hitArea(gtx, image.Rectangle{Max: content.Size()}, &dl.list.tag, pointer.CursorDefault)
+		// registered on the enclosing area so controls inside still get their clicks
+		event.Op(gtx.Ops, &dl.list.tag)
 		y := -dl.scroll
 		for i, r := range rows {
 			u.wrapText(gtx, image.Pt(0, y+d(9)), labelW-d(16), r.label, 13, u.pal.Muted)

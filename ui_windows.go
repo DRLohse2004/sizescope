@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"strings"
 	"unicode/utf16"
 	"unsafe"
 
@@ -23,6 +24,7 @@ var (
 	procDwmSetWindowAttr         = dwmapi.NewProc("DwmSetWindowAttribute")
 	comdlg32                     = windows.NewLazySystemDLL("comdlg32.dll")
 	procGetSaveFileNameW         = comdlg32.NewProc("GetSaveFileNameW")
+	procGetOpenFileNameW         = comdlg32.NewProc("GetOpenFileNameW")
 	ole32                        = windows.NewLazySystemDLL("ole32.dll")
 	procCoInitializeEx           = ole32.NewProc("CoInitializeEx")
 	procCoTaskMemFree            = ole32.NewProc("CoTaskMemFree")
@@ -168,6 +170,21 @@ func saveFileDialog(hwnd uintptr, defName string) string {
 		Flags: 0x2 | 0x800 | 0x80000} // overwrite prompt, path must exist, explorer
 	ofn.StructSize = uint32(unsafe.Sizeof(ofn))
 	if r, _, _ := procGetSaveFileNameW.Call(uintptr(unsafe.Pointer(&ofn))); r == 0 {
+		return ""
+	}
+	return windows.UTF16ToString(buf)
+}
+
+// openFileDialog asks for a file; filter is "Label|*.a;*.b".
+func openFileDialog(hwnd uintptr, filter string) string {
+	runtime.LockOSThread()
+	defer runtime.UnlockOSThread()
+	buf := make([]uint16, 32768)
+	f := utf16.Encode([]rune(strings.ReplaceAll(filter, "|", "\x00") + "\x00\x00"))
+	ofn := openFileName{Owner: hwnd, Filter: &f[0], File: &buf[0], MaxFile: uint32(len(buf)),
+		Flags: 0x1000 | 0x800 | 0x80000} // file must exist, path must exist, explorer
+	ofn.StructSize = uint32(unsafe.Sizeof(ofn))
+	if r, _, _ := procGetOpenFileNameW.Call(uintptr(unsafe.Pointer(&ofn))); r == 0 {
 		return ""
 	}
 	return windows.UTF16ToString(buf)

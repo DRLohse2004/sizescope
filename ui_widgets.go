@@ -30,7 +30,7 @@ func mustIcon(data []byte) *widget.Icon {
 
 var ic = struct {
 	folder, file, chevron, chevronDown, drive, net, usb, pick, export, shield, gear, play, stop,
-	open, copy, refresh, target, trash, mapIc, cloud, close, check, arrowDown, arrowUp, share *widget.Icon
+	open, copy, refresh, target, trash, mapIc, cloud, close, check, arrowDown, arrowUp, share, sweep *widget.Icon
 }{
 	folder: mustIcon(icons.FileFolder), file: mustIcon(icons.EditorInsertDriveFile),
 	chevron: mustIcon(icons.NavigationChevronRight), chevronDown: mustIcon(icons.NavigationExpandMore),
@@ -41,7 +41,7 @@ var ic = struct {
 	target: mustIcon(icons.MapsMyLocation), trash: mustIcon(icons.ActionDelete), mapIc: mustIcon(icons.ActionDashboard),
 	cloud: mustIcon(icons.FileCloud), close: mustIcon(icons.NavigationClose), check: mustIcon(icons.NavigationCheck),
 	arrowDown: mustIcon(icons.NavigationArrowDropDown), arrowUp: mustIcon(icons.NavigationArrowDropUp),
-	share: mustIcon(icons.FileFolderShared),
+	share: mustIcon(icons.FileFolderShared), sweep: mustIcon(icons.ContentDeleteSweep),
 }
 
 // ---------------------------------------------------------------- pointer helpers
@@ -188,7 +188,10 @@ func (v *VList) Layout(gtx layout.Context, u *UI, size image.Point, n, rowH int,
 	if last >= n {
 		last = n - 1
 	}
+	// the list's input area encloses the rows, so rows can contain their own
+	// clickable widgets and the list still receives wheel and click events
 	cl := clip.Rect(image.Rectangle{Max: size}).Push(gtx.Ops)
+	event.Op(gtx.Ops, &v.tag)
 	rowW := size.X
 	if n*rowH > size.Y {
 		rowW -= u.dp(gtx, 10) // keep content clear of the scrollbar
@@ -197,7 +200,6 @@ func (v *VList) Layout(gtx layout.Context, u *UI, size image.Point, n, rowH int,
 		y := i*rowH - v.off
 		row(gtx, i, image.Rect(0, y, rowW, y+rowH))
 	}
-	hitArea(gtx, image.Rectangle{Max: size}, &v.tag, pointer.CursorDefault)
 	if n*rowH > size.Y {
 		bw := u.dp(gtx, 10)
 		track := image.Rect(size.X-bw, 0, size.X, size.Y)

@@ -48,6 +48,41 @@ func settingsCandidates() []string {
 	return c
 }
 
+// cleanupDir is where imported cleanup definitions live: next to the EXE
+// (portable) or, if that folder is not writable, in the user config folder.
+func cleanupDir() string {
+	if exe, err := os.Executable(); err == nil {
+		dir := filepath.Join(filepath.Dir(exe), "cleanups")
+		if writable(dir) {
+			return dir
+		}
+	}
+	if dir, err := os.UserConfigDir(); err == nil {
+		return filepath.Join(dir, "SizeScope", "cleanups")
+	}
+	return "cleanups"
+}
+
+func writable(dir string) bool {
+	if st, err := os.Stat(dir); err == nil && st.IsDir() {
+		f, err := os.CreateTemp(dir, ".w*")
+		if err != nil {
+			return false
+		}
+		f.Close()
+		os.Remove(f.Name())
+		return true
+	}
+	parent := filepath.Dir(dir)
+	f, err := os.CreateTemp(parent, ".w*")
+	if err != nil {
+		return false
+	}
+	f.Close()
+	os.Remove(f.Name())
+	return true
+}
+
 func loadSettings() Settings {
 	s := defaultSettings()
 	for _, p := range settingsCandidates() {

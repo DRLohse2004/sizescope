@@ -53,3 +53,14 @@ func pickFolderDialog(uintptr) string {
 }
 
 func saveFileDialog(_ uintptr, def string) string { return filepath.Join(os.TempDir(), def) }
+
+func openFileDialog(_ uintptr, _ string) string {
+	if p := os.Getenv("SIZESCOPE_TEST_OPEN"); p != "" {
+		return p
+	}
+	out, err := exec.Command("zenity", "--file-selection").Output()
+	if err != nil {
+		return ""
+	}
+	return strings.TrimSpace(string(out))
+}
