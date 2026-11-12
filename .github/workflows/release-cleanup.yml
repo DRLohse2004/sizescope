@@ -2,6 +2,7 @@ name: release-cleanup
 
 # One-off maintenance: removes all existing releases and tags (they point to
 # commits from before the history rewrite) and rebuilds the current release.
+# Remove this file once it has run.
 on:
   push:
     branches: [main]
