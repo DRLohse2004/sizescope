@@ -1,74 +1,60 @@
-# SizeScope
+<p align="center">
+  <img src="docs/icon.png" width="72" alt="">
+</p>
 
-Portabler Speicherplatz-Analysator für Windows – ähnlich wie TreeSize Free. Eine einzelne EXE ohne Installation und ohne Abhängigkeiten (kein WebView2, kein .NET), läuft daher auch auf Windows-Servern.
+<h1 align="center">SizeScope</h1>
 
-![Ordnerbaum und Treemap](docs/screenshot.png)
+<p align="center">
+  Portabler Speicherplatz-Analysator für Windows – eine EXE, keine Installation, keine Abhängigkeiten.
+</p>
+
+<p align="center">
+  <a href="https://github.com/DRLohse2004/sizescope/releases/latest"><img src="https://img.shields.io/github/v/release/DRLohse2004/sizescope?label=Download" alt="Download"></a>
+  <img src="https://img.shields.io/badge/Windows-10%20%7C%2011%20%7C%20Server%202016%2B-0078D4" alt="Windows">
+  <a href="LICENSE"><img src="https://img.shields.io/github/license/DRLohse2004/sizescope" alt="Lizenz"></a>
+</p>
+
+![SizeScope mit Ordnerbaum und Treemap](docs/screenshot.png)
 
 ## Funktionen
 
-- **Ordnerbaum** mit Größe, belegtem Speicher, Anteil am übergeordneten Ordner, Anzahl Dateien/Ordner und Änderungsdatum – sortierbar, füllt sich schon während des Scans
-- **Treemap** des gewählten Ordners, eingefärbt nach Dateityp oder Ordner
-- **Dateitypen**, **größte Dateien** (filterbar nach Endung) und **Alter** nach Änderungsdatum
-- Kontextmenü: Öffnen, im Explorer zeigen, Pfad kopieren, neu einlesen, in den Papierkorb verschieben
-- **Bereinigen**: Temp-Ordner, Update-Downloads, Caches, Papierkorb u. v. m. – mit Vorschau und Aufstellung, was wo gelöscht wurde; eigene Bereinigungen importierbar
-- CSV-Export, Neustart als Administrator, Ausschlussmuster (z. B. `node_modules`)
-- Deutsch/Englisch, hell/dunkel
+- **Ordnerbaum** mit Größe, belegtem Speicher, Anteil, Dateien und Änderungsdatum – füllt sich schon während des Scans
+- **Treemap**, **Dateitypen**, **größte Dateien** und **Alter** für den gewählten Ordner
+- **Bereinigen**: Temp-Ordner, Update-Downloads, Caches, Papierkorb u. v. m. – mit Vorschau und Aufstellung, was wo gelöscht wurde; [eigene Regeln und Skripte](docs/cleanups.md) importierbar
+- Liest als Administrator auch geschützte Ordner wie *System Volume Information*
+- Erkennt OneDrive-Dateien, die nur online liegen, und lässt sie auf Wunsch aus
+- Kontextmenü, Papierkorb, CSV-Export, Tastatursteuerung
+- Deutsch/Englisch, hell/dunkel; Einstellungen liegen neben der EXE
 
-Junctions und symbolische Links werden nicht verfolgt (keine Doppelzählung). Dateien, die nur online in OneDrive & Co. liegen, werden standardmäßig ausgelassen; Cloud-Ordner werden ohne Download gelesen. Beides ist in den Einstellungen umstellbar.
+## Start
 
-## Verwendung
+[`SizeScope.exe` herunterladen](https://github.com/DRLohse2004/sizescope/releases/latest), starten, Laufwerk wählen. Optional mit Pfad: `SizeScope.exe D:\Daten`
 
-`SizeScope.exe` starten, Laufwerk wählen. Optional mit Pfad starten: `SizeScope.exe D:\Daten`
+Läuft auf Windows 10/11 und Windows Server ab 2016, auch per RDP. Die EXE ist nicht signiert; SmartScreen fragt daher beim ersten Start nach.
 
-Tastatur im Baum: Pfeiltasten, `Enter` öffnen, `F5` neu einlesen, `Entf` Papierkorb, `Strg+C` Pfad kopieren.
+## Selbst bauen
 
-**Voraussetzung:** Windows 10/11 oder Windows Server 2016 und neuer (64 Bit). Gezeichnet wird mit Direct3D 11; ohne Grafiktreiber übernimmt Windows das per Software.
+Benötigt nur [Go](https://go.dev) – funktioniert auch unter Linux:
 
-**Portabel:** Einstellungen liegen als `SizeScope.settings.json` neben der EXE (falls der Ordner schreibgeschützt ist, unter `%APPDATA%\SizeScope`).
-
-## Eigene Bereinigungen
-
-Über „Bereinigen“ → „Importieren“ lassen sich `.json`- und `.ps1`-Dateien hinzufügen. Sie landen im Ordner `cleanups` neben der EXE und können dort auch direkt abgelegt werden. Beispiele: [`examples/cleanups`](examples/cleanups).
-
-**JSON-Regel** – SizeScope löscht selbst, daher mit Vorschau und genauer Aufstellung:
-
-```json
-{
-  "name": { "de": "Mein Cache", "en": "My cache" },
-  "description": "Optional",
-  "admin": false,
-  "stopServices": ["dienstname"],
-  "targets": [
-    { "path": "%LOCALAPPDATA%\\App\\*\\Cache", "include": ["*"], "exclude": ["*.keep"],
-      "minAgeDays": 7, "recurse": true, "removeEmptyDirs": true }
-  ],
-  "commands": ["optionaler Befehl, Platzgewinn wird über den freien Speicher gemessen"]
-}
-```
-
-`path` darf `%VARIABLEN%` und `*` in jedem Abschnitt enthalten. Laufwerkswurzeln und Ordner direkt darunter (z. B. `C:\Windows`) werden abgelehnt. Verknüpfungen und Junctions werden nie verfolgt.
-
-**PowerShell-Skript** – optionale Kopfzeilen: `# Name:`, `# Name-de:`, `# Description:`, `# Admin: true`, `# Slow: true`, `# Preview: true`. Gibt das Skript Zeilen `SIZESCOPE|<Ort>|<Bytes>|<Dateien>` aus, erscheinen sie in der Übersicht; sonst zählt der Zuwachs an freiem Speicher. In der Vorschau läuft ein Skript nur mit `# Preview: true`, dann ist `SIZESCOPE_DRYRUN=1` gesetzt.
-
-Gelöscht wird endgültig, nicht in den Papierkorb.
-
-## Bauen
-
-Benötigt nur Go, funktioniert auch von Linux aus:
-
-```
+```sh
 go install github.com/tc-hib/go-winres@latest
 go-winres make --arch amd64
-GOOS=windows go build -trimpath -ldflags "-H windowsgui -s -w" -o build/bin/SizeScope.exe .
+GOOS=windows go build -trimpath -ldflags "-H windowsgui -s -w" -o SizeScope.exe .
 ```
-
-**Release:** Versionsnummer in `VERSION` erhöhen und auf `main` pushen – GitHub Actions baut die EXE und legt das Release `v<Version>` an. Text dafür: `.github/release-notes.md`.
-
-## Aufbau
 
 | Pfad | Inhalt |
 |---|---|
-| `scanner/` | Paralleler Scan, Baum-Modell, Abfragen (Treemap, Typen, Top-Dateien, Export) |
+| `scanner/` | Paralleler Scan und Abfragen (Treemap, Typen, Export) |
+| `cleanup/` | Bereinigungs-Engine und mitgelieferte Regeln |
 | `ui_*.go` | Oberfläche mit [Gio](https://gioui.org) |
-| `platform_*.go`, `ui_windows.go` | Laufwerke, Papierkorb, Explorer, Dialoge, Admin-Neustart |
-| `winres/` | Icon, Manifest und Versionsinfo der EXE |
+| `platform_*.go`, `ui_windows.go` | Windows-Funktionen (Laufwerke, Papierkorb, Dialoge) |
+
+Ein neues Release entsteht automatisch, wenn die Versionsnummer in `VERSION` erhöht wird.
+
+## Mitmachen
+
+Fehler und Ideen gerne als [Issue](https://github.com/DRLohse2004/sizescope/issues). Es gilt der [Verhaltenskodex](CODE_OF_CONDUCT.md).
+
+## Lizenz
+
+[MIT](LICENSE). Verwendet [Gio](https://gioui.org) (MIT/Unlicense), Go-Bibliotheken unter `golang.org/x` und die Go-Schriftarten (BSD-3-Clause) sowie [Material Design Icons](https://github.com/google/material-design-icons) (Apache 2.0).
