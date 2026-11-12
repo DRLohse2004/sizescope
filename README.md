@@ -5,36 +5,38 @@
 <h1 align="center">SizeScope</h1>
 
 <p align="center">
-  Portabler Speicherplatz-Analysator für Windows – eine EXE, keine Installation, keine Abhängigkeiten.
+  Portable disk space analyzer for Windows – one EXE, no installation, no dependencies.
 </p>
 
 <p align="center">
   <a href="https://github.com/DRLohse2004/sizescope/releases/latest"><img src="https://img.shields.io/github/v/release/DRLohse2004/sizescope?label=Download" alt="Download"></a>
   <img src="https://img.shields.io/badge/Windows-10%20%7C%2011%20%7C%20Server%202016%2B-0078D4" alt="Windows">
-  <a href="LICENSE"><img src="https://img.shields.io/github/license/DRLohse2004/sizescope" alt="Lizenz"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/github/license/DRLohse2004/sizescope" alt="License"></a>
 </p>
 
-![SizeScope mit Ordnerbaum und Treemap](docs/screenshot.png)
+<p align="center"><b>English</b> · <a href="README.de.md">Deutsch</a></p>
 
-## Funktionen
+![SizeScope with folder tree and treemap](docs/screenshot.png)
 
-- **Ordnerbaum** mit Größe, belegtem Speicher, Anteil, Dateien und Änderungsdatum – füllt sich schon während des Scans
-- **Treemap**, **Dateitypen**, **größte Dateien** und **Alter** für den gewählten Ordner
-- **Bereinigen**: Temp-Ordner, Update-Downloads, Caches, Papierkorb u. v. m. – mit Vorschau und Aufstellung, was wo gelöscht wurde; [eigene Regeln und Skripte](docs/cleanups.md) importierbar
-- Liest als Administrator auch geschützte Ordner wie *System Volume Information*
-- Erkennt OneDrive-Dateien, die nur online liegen, und lässt sie auf Wunsch aus
-- Kontextmenü, Papierkorb, CSV-Export, Tastatursteuerung
-- Deutsch/Englisch, hell/dunkel; Einstellungen liegen neben der EXE
+## Features
 
-## Start
+- **Folder tree** with size, allocated space, share, file count and modification date – fills in while the scan is still running
+- **Treemap**, **file types**, **largest files** and **age** for the selected folder
+- **Clean up**: temp folders, update downloads, caches, recycle bin and more – with preview and a report of what was deleted where; [custom rules and scripts](docs/cleanups.md) can be imported
+- Reads protected folders such as *System Volume Information* when run as administrator
+- Detects OneDrive files that are only stored online and can leave them out
+- Context menu, recycle bin, CSV export, keyboard navigation
+- English/German, light/dark; settings are stored next to the EXE
 
-[`SizeScope.exe` herunterladen](https://github.com/DRLohse2004/sizescope/releases/latest), starten, Laufwerk wählen. Optional mit Pfad: `SizeScope.exe D:\Daten`
+## Getting started
 
-Läuft auf Windows 10/11 und Windows Server ab 2016, auch per RDP. Die EXE ist nicht signiert; SmartScreen fragt daher beim ersten Start nach.
+[Download `SizeScope.exe`](https://github.com/DRLohse2004/sizescope/releases/latest), run it, pick a drive. Optionally pass a path: `SizeScope.exe D:\Data`
 
-## Selbst bauen
+Runs on Windows 10/11 and Windows Server 2016 or later, including over RDP. The EXE is not signed, so SmartScreen asks for confirmation on first start.
 
-Benötigt nur [Go](https://go.dev) – funktioniert auch unter Linux:
+## Building
+
+Only [Go](https://go.dev) is required – works on Linux too:
 
 ```sh
 go install github.com/tc-hib/go-winres@latest
@@ -42,19 +44,19 @@ go-winres make --arch amd64
 GOOS=windows go build -trimpath -ldflags "-H windowsgui -s -w" -o SizeScope.exe .
 ```
 
-| Pfad | Inhalt |
+| Path | Contents |
 |---|---|
-| `scanner/` | Paralleler Scan und Abfragen (Treemap, Typen, Export) |
-| `cleanup/` | Bereinigungs-Engine und mitgelieferte Regeln |
-| `ui_*.go` | Oberfläche mit [Gio](https://gioui.org) |
-| `platform_*.go`, `ui_windows.go` | Windows-Funktionen (Laufwerke, Papierkorb, Dialoge) |
+| `scanner/` | Parallel scan and queries (treemap, types, export) |
+| `cleanup/` | Cleanup engine and built-in rules |
+| `ui_*.go` | User interface with [Gio](https://gioui.org) |
+| `platform_*.go`, `ui_windows.go` | Windows functions (drives, recycle bin, dialogs) |
 
-Ein neues Release entsteht automatisch, wenn die Versionsnummer in `VERSION` erhöht wird.
+A new release is built automatically when the version in `VERSION` is increased.
 
-## Mitmachen
+## Contributing
 
-Fehler und Ideen gerne als [Issue](https://github.com/DRLohse2004/sizescope/issues). Es gilt der [Verhaltenskodex](CODE_OF_CONDUCT.md).
+Bug reports and ideas are welcome as [issues](https://github.com/DRLohse2004/sizescope/issues). Please follow the [code of conduct](CODE_OF_CONDUCT.md).
 
-## Lizenz
+## License
 
-[MIT](LICENSE). Verwendet [Gio](https://gioui.org) (MIT/Unlicense), Go-Bibliotheken unter `golang.org/x` und die Go-Schriftarten (BSD-3-Clause) sowie [Material Design Icons](https://github.com/google/material-design-icons) (Apache 2.0).
+[MIT](LICENSE). Uses [Gio](https://gioui.org) (MIT/Unlicense), Go libraries under `golang.org/x` and the Go fonts (BSD-3-Clause), and [Material Design Icons](https://github.com/google/material-design-icons) (Apache 2.0).
